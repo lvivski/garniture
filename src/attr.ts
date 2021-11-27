@@ -1,0 +1,110 @@
+import { toHyphenCase } from './helpers.js'
+import { DecoratedProperty, ObservedElement } from './types.js'
+
+const attributes = Symbol()
+
+declare module './types.js' {
+	interface ObservedElement {
+		[attributes]?: {
+			[key: string]: string
+		}
+	}
+}
+
+type AttrConfig = {
+	data?: boolean
+	bool?: boolean
+}
+
+function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: string) {
+	proto[attributes] = proto[attributes] || {}
+	proto[attributes]![key] = attr
+
+	const { constructor } = proto
+	let observedAttrs = [attr]
+	if ('observedAttributes' in constructor) {
+		observedAttrs = (constructor as any).observedAttributes.concat(observedAttrs)
+	}
+	Object.defineProperty(constructor, 'observedAttributes', {
+		configurable: true,
+		enumerable: true,
+		value: observedAttrs,
+	})
+}
+
+export function getAttrName<T extends ObservedElement>(proto: T, attr: string): string {
+	return proto[attributes]![attr]
+}
+
+export function bool<K extends string>(proto: Record<K, boolean>, key: K): void {
+	return attr({ bool: true })(proto as any, key)
+}
+
+export function data<K extends string>(proto: Record<K, string>, key: K): void {
+	return attr({ data: true })(proto as any, key)
+}
+
+export function attr<T extends ObservedElement>(
+	config?: AttrConfig
+): DecoratedProperty<T>
+export function attr<K extends string>(
+	proto: Record<K, boolean | string>,
+	key: K
+): void
+export function attr<T extends ObservedElement, K extends string>(
+	configOrProto?: AttrConfig | T,
+	maybeKey?: K,
+): DecoratedProperty<T> | void {
+	function decorator(proto: T, key: string): void {
+		let attrName = toHyphenCase(key)
+		let descriptor
+		if (configOrProto !== proto) { // enclosed
+			const config = configOrProto as AttrConfig
+			if (config.data) {
+				attrName = `data-${attrName}`
+			}
+
+			if (config.bool) {
+				descriptor = {
+					configurable: true,
+					enumerable: true,
+					get(): boolean {
+						return this.hasAttribute(attrName)
+					},
+					set(value: boolean): boolean {
+						if (value) {
+							this.setAttribute(attrName, '')
+						} else {
+							this.removeAttribute(attrName)
+						}
+						return value
+					}
+				}
+			}
+		}
+
+		if (!descriptor) {
+			descriptor = {
+				configurable: true,
+				enumerable: true,
+				get(): string {
+					return this.getAttribute(attrName)
+				},
+				set(value: string): string {
+					this.setAttribute(attrName, value)
+					return value
+				}
+			}
+		}
+
+		Object.defineProperty(proto, key, descriptor)
+
+		addToObserved(proto, key, attrName)
+	}
+
+	if (arguments.length > 1) {
+		return decorator(configOrProto as T, maybeKey!) // decorate
+	}
+
+	return decorator // enclose
+}
