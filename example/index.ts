@@ -1,4 +1,4 @@
-import { element, data, bool, attr, observe, html, css } from '../src/index.js'
+import { element, data, bool, attr, observe, html, css, slot } from '../src/index.js'
 
 const reset = css`
 * {
@@ -63,4 +63,28 @@ class PurpleHeader extends HTMLElement {
 	`
 })
 class RedText extends HTMLElement {
+}
+
+@element({
+	template: html`
+	<slot name="data-log"></slot>
+	`,
+	style: css`
+	:host {
+		display: block;
+	}
+	`
+})
+class SlotCounter extends HTMLElement {
+
+	@slot dataLog!: HTMLElement[]
+
+	connectedCallback() {
+		let counter = 0
+		setInterval(() => {
+			const span = document.createElement('span')
+			span.textContent = `${counter++}`
+			this.dataLog = [span]
+		}, 1000)
+	}
 }
