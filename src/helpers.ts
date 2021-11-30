@@ -2,6 +2,7 @@ export function toHyphenCase(str: string): string {
 	return str.replace(/([a-zA-Z])(?=[A-Z])/g, '$1-').toLowerCase()
 }
 
+const adopted = Symbol()
 declare global {
 	interface CSSStyleSheet {
 		replace(text: string): Promise<ConstructableStyleSheet>
@@ -9,6 +10,7 @@ declare global {
 	}
 
 	interface ShadowRoot {
+		[adopted]?: ConstructableStyleSheet[]
 		adoptedStyleSheets: CSSStyleSheet[]
 	}
 }
@@ -41,8 +43,8 @@ ConstructableStyleSheet.prototype = Object.create(CSSStyleSheet)
 Object.defineProperty(ConstructableStyleSheet.prototype, 'cssRules', {
 	configurable: true,
 	enumerable: true,
-	get() {
-		return this[styles].main.sheet.cssRules
+	get(this: ConstructableStyleSheet) {
+		return this[styles]?.main.sheet?.cssRules
 	}
 })
 
@@ -68,17 +70,15 @@ ConstructableStyleSheet.prototype.replaceSync = function (contents: string) {
 }
 
 if (!supportsConstructableStyleSheets) {
-	const adopted = Symbol()
-
 	Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', {
 		configurable: true,
 		enumerable: true,
-		get(): ConstructableStyleSheet[] {
+		get(this: ShadowRoot): ConstructableStyleSheet[] {
 			return this[adopted] || []
 		},
-		set(values: ConstructableStyleSheet[]) {
+		set(this: ShadowRoot, values: ConstructableStyleSheet[]) {
 			const previous = (this[adopted] || []).slice() as ConstructableStyleSheet[]
-			const existing = []
+			const existing: boolean[] = []
 			if (!Array.isArray(values)) {
 				values = [].concat(values || [])
 			}

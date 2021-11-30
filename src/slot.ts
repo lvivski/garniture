@@ -12,6 +12,7 @@ declare module './types.js' {
 }
 
 type SlotConfig = {
+	default: boolean
 }
 
 export function slot<T extends ObservedElement>(
@@ -26,31 +27,36 @@ export function slot<T extends ObservedElement, K extends string>(
 	maybeKey?: K,
 ): DecoratedProperty<T> | void {
 	function decorator(proto: T, key: string): void {
-		const slotName = toHyphenCase(key)
+		let slotName = toHyphenCase(key)
 		let config: SlotConfig
 		if (configOrProto !== proto) { // enclosed
 			config = configOrProto as SlotConfig
+			if (config.default) {
+				slotName = ''
+			}
 		}
 
 		Object.defineProperty(proto, key, {
 			configurable: true,
 			enumerable: true,
-			get(): HTMLElement[] {
-				return this[slotted][key] || []
+			get(this: T): HTMLElement[] {
+				return this[slotted]?.[slotName] || []
 			},
-			set(values: HTMLElement[]): void {
-				this[slotted] = this[slotted] || {}
-
-				const previous = (this[slotted][key] || []).slice() as HTMLElement[]
+			set(this: T, values: HTMLElement[]): void {
+				const previous = (this[slotted]?.[slotName] || []).slice() as HTMLElement[]
 				const existing = []
 				if (!Array.isArray(values)) {
 					values = [].concat(values || [])
 				}
-				this[slotted][key] = values
+
+				this[slotted] ||= {}
+				this[slotted]![slotName] = values
 				// add new elements
 				for (let i = 0; i < values.length; i++) {
 					const value = values[i]
-					value.setAttribute('slot', slotName)
+					if (slotName) {
+						value.setAttribute('slot', slotName)
+					}
 					const index = previous.indexOf(value)
 					if (index === -1) {
 						this.append(value)
@@ -72,7 +78,7 @@ export function slot<T extends ObservedElement, K extends string>(
 	}
 
 	if (arguments.length > 1) {
-		return decorator(configOrProto as T, maybeKey!) // decorate
+		return decorator(configOrProto as T, maybeKey as string) // decorate
 	}
 
 	return decorator // enclose

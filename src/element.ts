@@ -1,4 +1,5 @@
 import { toHyphenCase } from './helpers.js'
+import { slotted } from './slot.js'
 import { defaultTemplate } from './template.js'
 import { Constructor, DecoratedClass, ObservedElement } from './types.js'
 
@@ -46,6 +47,13 @@ export function element<T extends ObservedElement>(
 							if (configOrCtor.style) {
 								shadowRoot.adoptedStyleSheets = configOrCtor.style
 							}
+
+							shadowRoot.addEventListener('slotchange', event => {
+								const slot = event.target as HTMLSlotElement
+
+								this[slotted] ||= {}
+								this[slotted]![slot.name] = slot.assignedElements() as HTMLElement[]
+							})
 						}
 					}
 				}

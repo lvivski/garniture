@@ -68,6 +68,7 @@ class RedText extends HTMLElement {
 @element({
 	template: html`
 	<slot name="data-log"></slot>
+	<slot></slot>
 	`,
 	style: css`
 	:host {
@@ -78,13 +79,19 @@ class RedText extends HTMLElement {
 class SlotCounter extends HTMLElement {
 
 	@slot dataLog!: HTMLElement[]
+	@slot({
+		default: true
+	})
+	main!: HTMLElement[]
 
 	connectedCallback() {
 		let counter = 0
 		setInterval(() => {
 			const span = document.createElement('span')
 			span.textContent = `${counter++}`
+			const span2 = span.cloneNode(true) as HTMLSpanElement
 			this.dataLog = [span]
+			this.main = [span2]
 		}, 1000)
 	}
 }

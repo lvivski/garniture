@@ -66,7 +66,7 @@ export function observe<T extends ObservedElement>(
 				}
 				if (oldValue === newValue) return
 
-				const updaters = this[observed]![attributeName]
+				const updaters = this[observed]?.[attributeName]
 				if (updaters) {
 					for (const updater of updaters) {
 						updater.call(this)
@@ -76,13 +76,13 @@ export function observe<T extends ObservedElement>(
 		}
 
 		for (const attribute of observedAttributes) {
-			proto[observed]![attribute] = proto[observed]![attribute] || []
-			proto[observed]![attribute].push(descriptor.value!)
+			proto[observed]![attribute] ||= []
+			proto[observed]![attribute].push(descriptor.value as UpdateFunction)
 		}
 	}
 
 	if (arguments.length > 1) {
-		return decorator(propertiesOrProto as T, maybeKey!, maybeDescriptor!) // decorate
+		return decorator(propertiesOrProto as T, maybeKey as string, maybeDescriptor as TypedPropertyDescriptor<UpdateFunction>) // decorate
 	}
 
 	return decorator // enclose

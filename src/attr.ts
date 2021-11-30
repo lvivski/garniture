@@ -17,7 +17,7 @@ type AttrConfig = {
 }
 
 function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: string) {
-	proto[attributes] = proto[attributes] || {}
+	proto[attributes] ||= {}
 	proto[attributes]![key] = attr
 
 	const { constructor } = proto
@@ -32,8 +32,8 @@ function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: s
 	})
 }
 
-export function getAttrName<T extends ObservedElement>(proto: T, attr: string): string {
-	return proto[attributes]![attr]
+export function getAttrName<T extends ObservedElement>(proto: T, attr: string): string | undefined {
+	return proto[attributes]?.[attr]
 }
 
 export function bool<K extends string>(proto: Record<K, boolean>, key: K): void {
@@ -68,10 +68,10 @@ export function attr<T extends ObservedElement, K extends string>(
 				descriptor = {
 					configurable: true,
 					enumerable: true,
-					get(): boolean {
+					get(this: T): boolean {
 						return this.hasAttribute(attrName)
 					},
-					set(value: boolean): boolean {
+					set(this: T, value: boolean): boolean {
 						if (value) {
 							this.setAttribute(attrName, '')
 						} else {
@@ -87,10 +87,10 @@ export function attr<T extends ObservedElement, K extends string>(
 			descriptor = {
 				configurable: true,
 				enumerable: true,
-				get(): string {
+				get(this: T): string | null {
 					return this.getAttribute(attrName)
 				},
-				set(value: string): string {
+				set(this: T, value: string): string {
 					this.setAttribute(attrName, value)
 					return value
 				}
@@ -103,7 +103,7 @@ export function attr<T extends ObservedElement, K extends string>(
 	}
 
 	if (arguments.length > 1) {
-		return decorator(configOrProto as T, maybeKey!) // decorate
+		return decorator(configOrProto as T, maybeKey as string) // decorate
 	}
 
 	return decorator // enclose
