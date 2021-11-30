@@ -1,7 +1,7 @@
 import { toHyphenCase } from './helpers.js'
 import { DecoratedProperty, ObservedElement } from './types.js'
 
-const slotted = Symbol()
+export const slotted = Symbol()
 
 declare module './types.js' {
 	interface ObservedElement {
@@ -36,15 +36,17 @@ export function slot<T extends ObservedElement, K extends string>(
 			configurable: true,
 			enumerable: true,
 			get(): HTMLElement[] {
-				return this[slotted] || []
+				return this[slotted][key] || []
 			},
 			set(values: HTMLElement[]): void {
-				const previous = (this[slotted] || []).slice() as HTMLElement[]
+				this[slotted] = this[slotted] || {}
+
+				const previous = (this[slotted][key] || []).slice() as HTMLElement[]
 				const existing = []
 				if (!Array.isArray(values)) {
 					values = [].concat(values || [])
 				}
-				this[slotted] = values
+				this[slotted][key] = values
 				// add new elements
 				for (let i = 0; i < values.length; i++) {
 					const value = values[i]
