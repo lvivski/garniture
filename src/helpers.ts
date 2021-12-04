@@ -76,16 +76,16 @@ if (!supportsConstructableStyleSheets) {
 		get(this: ShadowRoot): ConstructableStyleSheet[] {
 			return this[adopted] || []
 		},
-		set(this: ShadowRoot, values: ConstructableStyleSheet[]) {
+		set(this: ShadowRoot, values: ConstructableStyleSheet[] = []) {
+			if (!Array.isArray(values)) {
+				throw new TypeError('Value must be an Array')
+			}
 			const previous = (this[adopted] || []).slice() as ConstructableStyleSheet[]
 			const existing: boolean[] = []
-			if (!Array.isArray(values)) {
-				values = [].concat(values || [])
-			}
+
 			this[adopted] = values
 			// add new styles
-			for (let i = 0; i < values.length; i++) {
-				const value = values[i]
+			for (const value of values) {
 				const index = previous.indexOf(value)
 				if (index === -1) {
 					const style = value[styles]

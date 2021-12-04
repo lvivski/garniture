@@ -42,18 +42,17 @@ export function slot<T extends ObservedElement, K extends string>(
 			get(this: T): HTMLElement[] {
 				return this[slotted]?.[slotName] || []
 			},
-			set(this: T, values: HTMLElement[]): void {
-				const previous = (this[slotted]?.[slotName] || []).slice() as HTMLElement[]
-				const existing = []
+			set(this: T, values: HTMLElement[] = []): void {
 				if (!Array.isArray(values)) {
-					values = [].concat(values || [])
+					throw new TypeError('Value must be an Array')
 				}
+				const previous = (this[slotted]?.[slotName] || []).slice() as HTMLElement[]
+				const existing: boolean[] = []
 
 				this[slotted] ||= {}
 				this[slotted]![slotName] = values
 				// add new elements
-				for (let i = 0; i < values.length; i++) {
-					const value = values[i]
+				for (const value of values) {
 					if (slotName) {
 						value.setAttribute('slot', slotName)
 					}
