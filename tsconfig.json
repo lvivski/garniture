@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"composite": true,
+		"declaration": true,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"forceConsistentCasingInFileNames": true,
