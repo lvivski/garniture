@@ -32,14 +32,15 @@ export function element<T extends ObservedElement>(
 			constructor() {
 				super()
 				if (typeof configOrCtor === 'object') {
-					if (configOrCtor.template || configOrCtor.style) {
+					const config = configOrCtor
+					if (config.template || config.style) {
 						const shadowRoot = this.attachShadow({ mode: 'open' })
 
-						const template = configOrCtor.template || defaultTemplate
+						const template = config.template || defaultTemplate
 						shadowRoot.append(template.content.cloneNode(true))
 
-						if (configOrCtor.style) {
-							shadowRoot.adoptedStyleSheets = configOrCtor.style
+						if (config.style) {
+							shadowRoot.adoptedStyleSheets = config.style
 						}
 
 						shadowRoot.addEventListener('slotchange', event => {

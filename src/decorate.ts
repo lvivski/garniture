@@ -1,17 +1,15 @@
 import {
-	Constructor, MethodDecorator, ObservedElement, UpdateFunction, PropertyDecorator, DecoratableProperties
+	Constructor, ObservedElement, DecoratableProperties, DecorationOptions
 } from './types'
 
-type DecorationOptions<T extends ObservedElement> = {
-	[K in DecoratableProperties<T>]?: PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
-}
-
-export function decorate<T extends ObservedElement>(constructor: Constructor<T>, options: DecorationOptions<T>) {
-	const proto = constructor.prototype
+// export function decorate<T extends ObservedElement>(target: T, options: DecorationOptions<T>): T
+export function decorate<T extends ObservedElement>(target: Constructor<T>, options: DecorationOptions<T>): Constructor<T>
+export function decorate<T extends ObservedElement>(target: T | Constructor<T>, options: DecorationOptions<T>) {
+	const object = typeof target === 'function' ? target.prototype : target
 	for (const key of Object.keys(options)) {
 		const decorator = options[key as DecoratableProperties<T>]!
-		decorator(proto, key, Object.getOwnPropertyDescriptor(proto, key)!)
+		decorator(object, key, Object.getOwnPropertyDescriptor(object, key)!)
 	}
 
-	return constructor
+	return target
 }

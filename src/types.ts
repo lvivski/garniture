@@ -34,6 +34,11 @@ type DecoratablePropertyNames<T> = StringOrBoolPropertyNames<T> | TypedPropertyN
 
 type OmitInheritedProperties<A, B> = Omit<A, keyof B>
 
-export type DecoratableProperties<T extends ObservedElement> = DecoratablePropertyNames<OmitInheritedProperties<T, ObservedElement>>
+export type DecoratableProperties<T> = DecoratablePropertyNames<OmitInheritedProperties<T, ObservedElement>>
 
-export type ObservablePropertiesList<T extends ObservedElement> = Array<StringOrBoolPropertyNames<OmitInheritedProperties<T, ObservedElement>>>
+export type ObservablePropertiesList<T> = Array<StringOrBoolPropertyNames<OmitInheritedProperties<T, ObservedElement>>>
+
+export type DecorationOptions<T> = {
+	[K in DecoratableProperties<T>]?: PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
+}
+
