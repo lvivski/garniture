@@ -110,7 +110,7 @@ element(decorate(class SomeTag2 extends HTMLElement {
 	one: attr,
 	two: bool,
 	three: data,
-	update: observe(['one', 'three'])
+	update: observe(['one', 'three']),
 }))
 
 element({
@@ -141,6 +141,6 @@ element({
 		}
 	}, {
 		dataLog: slot,
-		main: slot({ default: true })
+		main: slot({ default: true }),
 	})
 )

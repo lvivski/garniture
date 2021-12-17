@@ -1,6 +1,8 @@
 import { getAttrName } from './attr.js'
 import { toHyphenCase } from './helpers.js'
-import { Constructor, MethodDecorator, ObservedElement, UpdateFunction } from './types.js'
+import {
+	Constructor, ObservablePropertiesList, MethodDecorator, ObservedElement, UpdateFunction
+} from './types.js'
 
 const observed = Symbol()
 
@@ -12,20 +14,8 @@ declare module './types.js' {
 	}
 }
 
-type OmitInheritedProperties<A, B> = Omit<A, keyof B>
-
-type PropertyNames<T> = keyof T
-
-type StringOrBoolPropertyNames<T> = {
-	[K in keyof T]: T[K] extends string ? K : T[K] extends boolean ? K : never
-}[PropertyNames<T>]
-
-type StringOrBoolProperties<T> = Pick<T, StringOrBoolPropertyNames<T>>
-
-type DirectPropertiesList<A, B> = Array<PropertyNames<StringOrBoolProperties<OmitInheritedProperties<A, B>>>>
-
 export function observe<T extends ObservedElement>(
-	properties?: DirectPropertiesList<T, ObservedElement>,
+	properties?: ObservablePropertiesList<T>,
 ): MethodDecorator<T, UpdateFunction>
 export function observe<T extends ObservedElement>(
 	proto: T,
@@ -33,7 +23,7 @@ export function observe<T extends ObservedElement>(
 	descriptor: TypedPropertyDescriptor<UpdateFunction>,
 ): void
 export function observe<T extends ObservedElement>(
-	propertiesOrProto?: DirectPropertiesList<T, ObservedElement> | T,
+	propertiesOrProto?: ObservablePropertiesList<T> | T,
 	maybeKey?: string,
 	maybeDescriptor?: TypedPropertyDescriptor<UpdateFunction>,
 ): MethodDecorator<T, UpdateFunction> | void {
@@ -43,7 +33,7 @@ export function observe<T extends ObservedElement>(
 		const { constructor } = proto
 
 		if (propertiesOrProto !== proto) { // enclosed
-			const properties = propertiesOrProto as DirectPropertiesList<T, ObservedElement>
+			const properties = propertiesOrProto as ObservablePropertiesList<T>
 			observedAttributes = properties && properties.length
 				? properties.map((attribute) => getAttrName(proto, attribute as string) || toHyphenCase(attribute as string))
 				: (constructor as Constructor<T>).observedAttributes || []

@@ -21,3 +21,19 @@ export interface ObservedElement extends HTMLElement {
 		namespace?: string,
 	): void
 }
+
+type PropertyNames<T> = keyof T
+
+type TypedPropertyNames<T, U> = {
+	[K in keyof T]: T[K] extends U ? K : never
+}[PropertyNames<T>]
+
+type StringOrBoolPropertyNames<T> = TypedPropertyNames<T, string> | TypedPropertyNames<T, boolean>
+
+type DecoratablePropertyNames<T> = StringOrBoolPropertyNames<T> | TypedPropertyNames<T, HTMLElement[]> | TypedPropertyNames<T, UpdateFunction>
+
+type OmitInheritedProperties<A, B> = Omit<A, keyof B>
+
+export type DecoratableProperties<T extends ObservedElement> = DecoratablePropertyNames<OmitInheritedProperties<T, ObservedElement>>
+
+export type ObservablePropertiesList<T extends ObservedElement> = Array<StringOrBoolPropertyNames<OmitInheritedProperties<T, ObservedElement>>>
