@@ -1,8 +1,10 @@
-export type DecoratedClass<T> = (constructor: Constructor<T>) => void
+export type UpdateFunction = () => void
 
-export type DecoratedProperty<T> = (proto: T, key: string) => void
+export type ClassDecorator<T> = (constructor: Constructor<T>) => void
 
-export type DecoratedFunction<T, K> = (proto: T, key: string, descriptor: TypedPropertyDescriptor<K>) => void
+export type PropertyDecorator<T, U> = <K extends string>(proto: T & Record<K, U>, key: K) => void
+
+export type MethodDecorator<T, U> = <K extends string>(proto: T & Record<K, U>, key: K, descriptor: TypedPropertyDescriptor<U>) => void
 
 export interface Constructor<T> {
 	new(...args: unknown[]): T

@@ -1,5 +1,5 @@
 import { toHyphenCase } from './helpers.js'
-import { DecoratedProperty, ObservedElement } from './types.js'
+import { ObservedElement, PropertyDecorator } from './types.js'
 
 export const slotted = Symbol()
 
@@ -17,7 +17,7 @@ type SlotConfig = {
 
 export function slot<T extends ObservedElement>(
 	config?: SlotConfig
-): DecoratedProperty<T>
+): PropertyDecorator<T, HTMLElement[]>
 export function slot<K extends string>(
 	proto: Record<K, HTMLElement[]>,
 	key: K
@@ -25,7 +25,7 @@ export function slot<K extends string>(
 export function slot<T extends ObservedElement, K extends string>(
 	configOrProto?: SlotConfig | T,
 	maybeKey?: K,
-): DecoratedProperty<T> | void {
+): PropertyDecorator<T, HTMLElement[]> | void {
 	function decorator(proto: T, key: string): void {
 		let slotName = toHyphenCase(key)
 		let config: SlotConfig

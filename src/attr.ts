@@ -1,5 +1,5 @@
 import { toHyphenCase } from './helpers.js'
-import { DecoratedProperty, ObservedElement } from './types.js'
+import { ObservedElement, PropertyDecorator } from './types.js'
 
 const attributes = Symbol()
 
@@ -46,7 +46,7 @@ export function data<K extends string>(proto: Record<K, string>, key: K): void {
 
 export function attr<T extends ObservedElement>(
 	config?: AttrConfig
-): DecoratedProperty<T>
+): PropertyDecorator<T, string | boolean>
 export function attr<K extends string>(
 	proto: Record<K, boolean | string>,
 	key: K
@@ -54,7 +54,7 @@ export function attr<K extends string>(
 export function attr<T extends ObservedElement, K extends string>(
 	configOrProto?: AttrConfig | T,
 	maybeKey?: K,
-): DecoratedProperty<T> | void {
+): PropertyDecorator<T, string | boolean> | void {
 	function decorator(proto: T, key: string): void {
 		let attrName = toHyphenCase(key)
 		let descriptor

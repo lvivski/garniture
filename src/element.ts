@@ -1,7 +1,7 @@
 import { toHyphenCase } from './helpers.js'
 import { slotted } from './slot.js'
 import { defaultTemplate } from './template.js'
-import { Constructor, DecoratedClass, ObservedElement } from './types.js'
+import { Constructor, ClassDecorator, ObservedElement } from './types.js'
 
 type ElementConfig = {
 	name?: string
@@ -11,53 +11,55 @@ type ElementConfig = {
 
 export function element<T extends ObservedElement>(
 	config?: string | ElementConfig
-): DecoratedClass<T>
+): ClassDecorator<T>
 export function element<T extends ObservedElement>(
 	constructor: Constructor<T>
-): void
+): Constructor<T>
 export function element<T extends ObservedElement>(
 	configOrCtor?: string | ElementConfig | Constructor<T>
-): DecoratedClass<T> | void {
-	function decorator(constructor: Constructor<T>): void {
-		let tagName
+): ClassDecorator<T> | Constructor<T> {
+	function decorator(constructor: Constructor<T>): Constructor<T> {
+		let tagName = toHyphenCase(constructor.name)
 		if (configOrCtor !== constructor) { // enclosed
 			if (typeof configOrCtor === 'string') {
 				tagName = configOrCtor
-			} else {
-				tagName = configOrCtor?.name || null
+			} else if (configOrCtor?.name) {
+				tagName = configOrCtor.name
 			}
 		}
 
-		if (!tagName) {
-			tagName = toHyphenCase(constructor.name)
-		}
+		const Element = class extends (constructor as Constructor<ObservedElement>) {
+			constructor() {
+				super()
+				if (typeof configOrCtor === 'object') {
+					if (configOrCtor.template || configOrCtor.style) {
+						const shadowRoot = this.attachShadow({ mode: 'open' })
 
-		customElements.define(
-			tagName,
-			class extends (constructor as Constructor<ObservedElement>) {
-				constructor() {
-					super()
-					if (typeof configOrCtor === 'object') {
-						if (configOrCtor.template || configOrCtor.style) {
-							const shadowRoot = this.attachShadow({ mode: 'open' })
+						const template = configOrCtor.template || defaultTemplate
+						shadowRoot.append(template.content.cloneNode(true))
 
-							const template = configOrCtor.template || defaultTemplate
-							shadowRoot.append(template.content.cloneNode(true))
-
-							if (configOrCtor.style) {
-								shadowRoot.adoptedStyleSheets = configOrCtor.style
-							}
-
-							shadowRoot.addEventListener('slotchange', event => {
-								const slot = event.target as HTMLSlotElement
-
-								this[slotted] ||= {}
-								this[slotted]![slot.name] = slot.assignedElements() as HTMLElement[]
-							})
+						if (configOrCtor.style) {
+							shadowRoot.adoptedStyleSheets = configOrCtor.style
 						}
+
+						shadowRoot.addEventListener('slotchange', event => {
+							const slot = event.target as HTMLSlotElement
+
+							this[slotted] ||= {}
+							this[slotted]![slot.name] = slot.assignedElements() as HTMLElement[]
+						})
 					}
 				}
-			})
+			}
+		}
+
+		Object.defineProperty(Element, 'name', {
+			value: `Element(${constructor.name})`
+		})
+
+		customElements.define(tagName, Element)
+
+		return Element as Constructor<T>
 	}
 
 	if (typeof configOrCtor === 'function') {

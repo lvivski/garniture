@@ -1,10 +1,8 @@
 import { getAttrName } from './attr.js'
 import { toHyphenCase } from './helpers.js'
-import { Constructor, DecoratedFunction, ObservedElement } from './types.js'
+import { Constructor, MethodDecorator, ObservedElement, UpdateFunction } from './types.js'
 
 const observed = Symbol()
-
-export type UpdateFunction = () => void
 
 declare module './types.js' {
 	interface ObservedElement {
@@ -28,7 +26,7 @@ type DirectPropertiesList<A, B> = Array<PropertyNames<StringOrBoolProperties<Omi
 
 export function observe<T extends ObservedElement>(
 	properties?: DirectPropertiesList<T, ObservedElement>,
-): DecoratedFunction<T, UpdateFunction>
+): MethodDecorator<T, UpdateFunction>
 export function observe<T extends ObservedElement>(
 	proto: T,
 	key: string,
@@ -38,7 +36,7 @@ export function observe<T extends ObservedElement>(
 	propertiesOrProto?: DirectPropertiesList<T, ObservedElement> | T,
 	maybeKey?: string,
 	maybeDescriptor?: TypedPropertyDescriptor<UpdateFunction>,
-): DecoratedFunction<T, UpdateFunction> | void {
+): MethodDecorator<T, UpdateFunction> | void {
 	function decorator(proto: T, key: string, descriptor: TypedPropertyDescriptor<UpdateFunction>): void {
 		let observedAttributes: string[]
 
