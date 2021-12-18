@@ -28,7 +28,7 @@ export function element<T extends ObservedElement>(
 			}
 		}
 
-		const Element = class extends (constructor as Constructor<ObservedElement>) {
+		const CustomElement = class extends (constructor as Constructor<ObservedElement>) {
 			constructor() {
 				super()
 				if (typeof configOrCtor === 'object') {
@@ -54,13 +54,13 @@ export function element<T extends ObservedElement>(
 			}
 		}
 
-		Object.defineProperty(Element, 'name', {
+		Object.defineProperty(CustomElement, 'name', {
 			value: `Element(${constructor.name})`
 		})
 
-		customElements.define(tagName, Element)
+		customElements.define(tagName, CustomElement)
 
-		return Element as Constructor<T>
+		return CustomElement as Constructor<T>
 	}
 
 	if (typeof configOrCtor === 'function') {
