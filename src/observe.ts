@@ -14,6 +14,9 @@ declare module './types.js' {
 	}
 }
 
+export function observe<T extends object>(
+	properties?: Array<keyof T>,
+): MethodDecorator<T, UpdateFunction>
 export function observe<T extends ObservedElement>(
 	properties?: ObservablePropertiesList<T>,
 ): MethodDecorator<T, UpdateFunction>

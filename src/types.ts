@@ -1,6 +1,6 @@
 export type UpdateFunction = () => void
 
-export type ClassDecorator<T> = (constructor: Constructor<T>) => void
+export type ClassDecorator<T> = (constructor: T) => void
 
 export type PropertyDecorator<T, U> = <K extends string>(proto: T & Record<K, U>, key: K) => void
 
@@ -42,3 +42,17 @@ export type DecorationOptions<T> = {
 	[K in DecoratableProperties<T>]?: PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
 }
 
+export type DecorationConfig<T> = {
+	[key: string]: PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<ObservedElement & T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
+}
+
+export type ExpectedProperties<T, U> = T extends object ? {
+	[K in keyof T]:
+	T[K] extends PropertyDecorator<U, string | boolean> ? string :
+	T[K] extends PropertyDecorator<U, boolean> ? boolean :
+	T[K] extends PropertyDecorator<U, string> ? string :
+	T[K] extends PropertyDecorator<U, HTMLElement[]> ? HTMLElement[] :
+	T[K] extends MethodDecorator<U, UpdateFunction> ? UpdateFunction :
+	T[K] extends MethodDecorator<T, UpdateFunction> ? UpdateFunction :
+	never
+} : unknown

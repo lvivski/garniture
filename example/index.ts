@@ -140,7 +140,57 @@ element({
 			}, 1000)
 		}
 	}, {
-		dataLog: slot,
+		dataLog: attr,
 		main: slot({ default: true }),
 	})
+)
+
+element({
+	decorate: {
+		one: attr,
+		two: bool,
+		three: data,
+		update: observe(['one', 'three']),
+	}
+})(class SomeTag2 extends HTMLElement {
+	one!: string
+	two!: boolean
+	three!: string
+
+	update() {
+		console.log(this.one, this.two, this.three)
+	}
+})
+
+element({
+	template: html`
+	<slot name="data-log"></slot>
+	<slot></slot>
+	`,
+	style: css`
+	:host {
+		display: block;
+	}
+	`,
+	decorate: {
+		dataLog: slot,
+		main: slot({ default: true }),
+	}
+})(
+	class SlotCounter2 extends HTMLElement {
+
+		dataLog!: HTMLElement[]
+		main!: HTMLElement[]
+
+		connectedCallback() {
+			let counter = 0
+			setInterval(() => {
+				const span = document.createElement('span')
+				span.textContent = `${counter++}`
+				const span2 = span.cloneNode(true) as HTMLSpanElement
+				this.dataLog = [span]
+				this.main = [span2]
+			}, 1000)
+		}
+	}
 )
