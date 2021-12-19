@@ -27,7 +27,7 @@ class SomeTag extends HTMLElement {
 
 	@observe<SomeTag>(['one', 'three'])
 	update() {
-		console.log(this.one, this.two, this.three)
+		console.log(this.tagName, this.one, this.two, this.three)
 	}
 }
 
@@ -94,7 +94,7 @@ class SlotCounter extends HTMLElement {
 			const span2 = span.cloneNode(true) as HTMLSpanElement
 			this.dataLog = [span]
 			this.main = [span2]
-		}, 1000)
+		}, 500)
 	}
 }
 
@@ -104,7 +104,7 @@ element(decorate(class SomeTag2 extends HTMLElement {
 	three!: string
 
 	update() {
-		console.log(this.one, this.two, this.three)
+		console.log(this.tagName, this.one, this.two, this.three)
 	}
 }, {
 	one: attr,
@@ -123,27 +123,25 @@ element({
 		display: block;
 	}
 	`
-})(
-	decorate(class SlotCounter2 extends HTMLElement {
+})(decorate(class SlotCounter2 extends HTMLElement {
 
-		dataLog!: HTMLElement[]
-		main!: HTMLElement[]
+	dataLog!: HTMLElement[]
+	main!: HTMLElement[]
 
-		connectedCallback() {
-			let counter = 0
-			setInterval(() => {
-				const span = document.createElement('span')
-				span.textContent = `${counter++}`
-				const span2 = span.cloneNode(true) as HTMLSpanElement
-				this.dataLog = [span]
-				this.main = [span2]
-			}, 1000)
-		}
-	}, {
-		dataLog: attr,
-		main: slot({ default: true }),
-	})
-)
+	connectedCallback() {
+		let counter = 0
+		setInterval(() => {
+			const span = document.createElement('span')
+			span.textContent = `${counter++}`
+			const span2 = span.cloneNode(true) as HTMLSpanElement
+			this.dataLog = [span]
+			this.main = [span2]
+		}, 1000)
+	}
+}, {
+	dataLog: slot,
+	main: slot({ default: true }),
+}))
 
 element({
 	decorate: {
@@ -152,13 +150,13 @@ element({
 		three: data,
 		update: observe(['one', 'three']),
 	}
-})(class SomeTag2 extends HTMLElement {
+})(class SomeTag3 extends HTMLElement {
 	one!: string
 	two!: boolean
 	three!: string
 
 	update() {
-		console.log(this.one, this.two, this.three)
+		console.log(this.tagName, this.one, this.two, this.three)
 	}
 })
 
@@ -176,21 +174,19 @@ element({
 		dataLog: slot,
 		main: slot({ default: true }),
 	}
-})(
-	class SlotCounter2 extends HTMLElement {
+})(class SlotCounter3 extends HTMLElement {
 
-		dataLog!: HTMLElement[]
-		main!: HTMLElement[]
+	dataLog!: HTMLElement[]
+	main!: HTMLElement[]
 
-		connectedCallback() {
-			let counter = 0
-			setInterval(() => {
-				const span = document.createElement('span')
-				span.textContent = `${counter++}`
-				const span2 = span.cloneNode(true) as HTMLSpanElement
-				this.dataLog = [span]
-				this.main = [span2]
-			}, 1000)
-		}
+	connectedCallback() {
+		let counter = 0
+		setInterval(() => {
+			const span = document.createElement('span')
+			span.textContent = `${counter++}`
+			const span2 = span.cloneNode(true) as HTMLSpanElement
+			this.dataLog = [span]
+			this.main = [span2]
+		}, 2000)
 	}
-)
+})

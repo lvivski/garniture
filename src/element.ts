@@ -1,4 +1,4 @@
-import { decorateInternal } from './decorate.js'
+import { decorate, decorateInstance } from './decorate.js'
 import { toHyphenCase } from './helpers.js'
 import { slotted } from './slot.js'
 import { defaultTemplate } from './template.js'
@@ -32,6 +32,11 @@ export function element<TConfig extends ElementConfig<TConfig['decorate']>, TEle
 			}
 		}
 
+		const config = configOrCtor as ElementConfig<TConfig['decorate']>
+		if (config.decorate) {
+			decorate<ObservedElement>(constructor, config.decorate)
+		}
+
 		const CustomElement = class extends (constructor as Constructor<ObservedElement>) {
 			constructor() {
 				super()
@@ -56,7 +61,7 @@ export function element<TConfig extends ElementConfig<TConfig['decorate']>, TEle
 					}
 
 					if (config.decorate) {
-						decorateInternal<InstanceType<typeof CustomElement>>(this, config.decorate)
+						decorateInstance<InstanceType<typeof CustomElement>>(this, config.decorate)
 					}
 				}
 			}

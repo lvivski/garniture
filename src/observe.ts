@@ -9,7 +9,7 @@ const observed = Symbol()
 declare module './types.js' {
 	interface ObservedElement {
 		[observed]?: {
-			[key: string]: UpdateFunction[]
+			[key: string]: Set<UpdateFunction>
 		}
 	}
 }
@@ -67,8 +67,8 @@ export function observe<T extends ObservedElement>(
 		}
 
 		for (const attribute of observedAttributes) {
-			proto[observed]![attribute] ||= []
-			proto[observed]![attribute].push(descriptor.value as UpdateFunction)
+			proto[observed]![attribute] ||= new Set()
+			proto[observed]![attribute].add(descriptor.value as UpdateFunction)
 		}
 	}
 

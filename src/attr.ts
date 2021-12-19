@@ -1,5 +1,5 @@
 import { toHyphenCase } from './helpers.js'
-import { ObservedElement, PropertyDecorator } from './types.js'
+import { Constructor, ObservedElement, PropertyDecorator } from './types.js'
 
 const attributes = Symbol()
 
@@ -21,14 +21,16 @@ function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: s
 	proto[attributes]![key] = attr
 
 	const { constructor } = proto
-	let observedAttrs = [attr]
+	let attrs = [attr]
 	if ('observedAttributes' in constructor) {
-		observedAttrs = (constructor as any).observedAttributes.concat(observedAttrs)
+		const observed = (constructor as Constructor<T>).observedAttributes!
+		if (observed.includes(attr)) return
+		attrs = observed.concat(observed)
 	}
 	Object.defineProperty(constructor, 'observedAttributes', {
 		configurable: true,
 		enumerable: true,
-		value: observedAttrs,
+		value: attrs,
 	})
 }
 
