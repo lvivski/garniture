@@ -8,7 +8,7 @@ import {
  than a specific incorrect property
 */
 export function decorateInstance<T extends ObservedElement>(target: T, options: DecorationOptions<T>) {
-	const proto = Object.getPrototypeOf(Object.getPrototypeOf(target))
+	const proto = Object.getPrototypeOf(target)
 	for (const key of Object.keys(options)) {
 		const decorator = options[key as DecoratableProperties<T>]!
 		const descriptor = Object.getOwnPropertyDescriptor(proto, key)!

@@ -37,13 +37,13 @@ export function element<TConfig extends ElementConfig<TConfig['decorate']>, TEle
 			decorate<ObservedElement>(constructor, config.decorate)
 		}
 
-		const CustomElement = class extends (constructor as Constructor<ObservedElement>) {
-			constructor() {
-				super()
+		const CustomElement = new Proxy(constructor, {
+			construct(target, args, newTarget) {
+				const element: ObservedElement = Reflect.construct(target, args, newTarget)
 				if (typeof configOrCtor === 'object') {
 					const config = configOrCtor as ElementConfig<TConfig['decorate']>
 					if (config.template || config.style) {
-						const shadowRoot = this.attachShadow({ mode: 'open' })
+						const shadowRoot = element.attachShadow({ mode: 'open' })
 
 						const template = config.template || defaultTemplate
 						shadowRoot.append(template.content.cloneNode(true))
@@ -55,20 +55,18 @@ export function element<TConfig extends ElementConfig<TConfig['decorate']>, TEle
 						shadowRoot.addEventListener('slotchange', event => {
 							const slot = event.target as HTMLSlotElement
 
-							this[slotted] ||= {}
-							this[slotted]![slot.name] = slot.assignedElements() as HTMLElement[]
+							element[slotted] ||= {}
+							element[slotted]![slot.name] = slot.assignedElements() as HTMLElement[]
 						})
 					}
 
 					if (config.decorate) {
-						decorateInstance<InstanceType<typeof CustomElement>>(this, config.decorate)
+						decorateInstance(element, config.decorate)
 					}
 				}
-			}
-		}
 
-		Object.defineProperty(CustomElement, 'name', {
-			value: `Element(${constructor.name})`
+				return element
+			}
 		})
 
 		customElements.define(tagName, CustomElement)

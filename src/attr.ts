@@ -22,11 +22,13 @@ function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: s
 
 	const { constructor } = proto
 	let attrs = [attr]
+
 	if ('observedAttributes' in constructor) {
 		const observed = (constructor as Constructor<T>).observedAttributes!
 		if (observed.includes(attr)) return
 		attrs = observed.concat(observed)
 	}
+
 	Object.defineProperty(constructor, 'observedAttributes', {
 		configurable: true,
 		enumerable: true,
