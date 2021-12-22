@@ -8,11 +8,13 @@ import {
  than a specific incorrect property
 */
 export function decorateInstance<T extends ObservedElement>(target: T, options: DecorationOptions<T>) {
-	const proto = Object.getPrototypeOf(target)
 	for (const key of Object.keys(options)) {
 		const decorator = options[key as DecoratableProperties<T>]!
-		const descriptor = Object.getOwnPropertyDescriptor(proto, key)!
-		decorator(target as any, key, descriptor)
+		const descriptor = Object.getOwnPropertyDescriptor(target, key)
+		if (descriptor) {
+			// There will only be a descriptor in case it's an instance field
+			decorator(target as any, key, descriptor)
+		}
 	}
 	return target
 }

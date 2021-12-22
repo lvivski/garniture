@@ -40,6 +40,7 @@ export function element<TConfig extends ElementConfig<TConfig['decorate']>, TEle
 		const CustomElement = new Proxy(constructor, {
 			construct(target, args, newTarget) {
 				const element: ObservedElement = Reflect.construct(target, args, newTarget)
+
 				if (typeof configOrCtor === 'object') {
 					const config = configOrCtor as ElementConfig<TConfig['decorate']>
 					if (config.template || config.style) {
@@ -61,6 +62,7 @@ export function element<TConfig extends ElementConfig<TConfig['decorate']>, TEle
 					}
 
 					if (config.decorate) {
+						// Needed for decorating instance fields
 						decorateInstance(element, config.decorate)
 					}
 				}
