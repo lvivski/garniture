@@ -29,7 +29,7 @@ function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: s
 		attrs = observed.concat(observed)
 	}
 
-	Object.defineProperty(constructor, 'observedAttributes', {
+	Reflect.defineProperty(constructor, 'observedAttributes', {
 		configurable: true,
 		enumerable: true,
 		value: attrs,
@@ -101,7 +101,7 @@ export function attr<T extends ObservedElement, K extends string>(
 			}
 		}
 
-		Object.defineProperty(proto, key, descriptor)
+		Reflect.defineProperty(proto, key, descriptor)
 
 		addToObserved(proto, key, attrName)
 	}

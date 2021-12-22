@@ -13,7 +13,28 @@ declare global {
 		[adopted]?: ConstructableStyleSheet[]
 		adoptedStyleSheets: CSSStyleSheet[]
 	}
+
+	interface TrustedTypesPolicy {
+		createHTML(html: string): string
+	}
+
+	interface TrustedTypes {
+		createPolicy(name: string, rules: TrustedTypesPolicy): TrustedTypesPolicy
+	}
+
+	interface Window {
+		trustedTypes: TrustedTypes
+	}
+
 }
+
+if (typeof window.trustedTypes == 'undefined') {
+	window.trustedTypes = { createPolicy: (_, rules) => rules }
+}
+
+export const htmlPolicy = window.trustedTypes.createPolicy('html', {
+	createHTML: (html: string) => html,
+})
 
 const supportsConstructableStyleSheets = 'replace' in CSSStyleSheet.prototype
 const doc = document.implementation.createHTMLDocument('')
@@ -40,7 +61,7 @@ function ConstructableStyleSheet(this: ConstructableStyleSheet) {
 
 ConstructableStyleSheet.prototype = Object.create(CSSStyleSheet)
 
-Object.defineProperty(ConstructableStyleSheet.prototype, 'cssRules', {
+Reflect.defineProperty(ConstructableStyleSheet.prototype, 'cssRules', {
 	configurable: true,
 	enumerable: true,
 	get(this: ConstructableStyleSheet) {
@@ -70,7 +91,7 @@ ConstructableStyleSheet.prototype.replaceSync = function (contents: string) {
 }
 
 if (!supportsConstructableStyleSheets) {
-	Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', {
+	Reflect.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', {
 		configurable: true,
 		enumerable: true,
 		get(this: ShadowRoot): ConstructableStyleSheet[] {

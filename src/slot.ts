@@ -36,7 +36,7 @@ export function slot<T extends ObservedElement, K extends string>(
 			}
 		}
 
-		Object.defineProperty(proto, key, {
+		Reflect.defineProperty(proto, key, {
 			configurable: true,
 			enumerable: true,
 			get(this: T): HTMLElement[] {

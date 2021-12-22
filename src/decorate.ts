@@ -10,7 +10,7 @@ import {
 export function decorateInstance<T extends ObservedElement>(target: T, options: DecorationOptions<T>) {
 	for (const key of Object.keys(options)) {
 		const decorator = options[key as DecoratableProperties<T>]!
-		const descriptor = Object.getOwnPropertyDescriptor(target, key)
+		const descriptor = Reflect.getOwnPropertyDescriptor(target, key)
 		if (descriptor) {
 			// There will only be a descriptor in case it's an instance field
 			decorator(target as any, key, descriptor)
@@ -23,7 +23,7 @@ export function decorate<T extends ObservedElement>(target: Constructor<T>, opti
 	const proto = target.prototype
 	for (const key of Object.keys(options)) {
 		const decorator = options[key as DecoratableProperties<T>]!
-		const descriptor = Object.getOwnPropertyDescriptor(proto, key)!
+		const descriptor = Reflect.getOwnPropertyDescriptor(proto, key)!
 		decorator(proto, key, descriptor)
 	}
 	return target

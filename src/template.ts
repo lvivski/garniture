@@ -1,3 +1,5 @@
+import { htmlPolicy } from './helpers.js'
+
 type TemplateStringValue = string | number
 type StyleStringValue = TemplateStringValue | CSSStyleSheet | CSSStyleSheet[]
 
@@ -18,7 +20,7 @@ export function html(
 	}
 
 	const template = document.createElement('template')
-	template.innerHTML = html
+	template.innerHTML = htmlPolicy.createHTML(html)
 
 	return template
 }
