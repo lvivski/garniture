@@ -9,6 +9,9 @@ export type MethodDecorator<T, U> = <K extends string>(proto: T & Record<K, U>, 
 export interface Constructor<T> {
 	new(...args: unknown[]): T
 	observedAttributes?: string[]
+	decorate?: DecorationOptions<T>
+	template?: HTMLTemplateElement
+	style?: CSSStyleSheet[]
 }
 
 export interface ObservedElement extends HTMLElement {
