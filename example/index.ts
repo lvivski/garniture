@@ -1,5 +1,6 @@
 import {
-	element, data, bool, attr, observe, html, css, slot, decorate
+	element, data, bool, attr, observe, html, css, slot, decorate,
+	DecorationOptions, CustomElement
 } from '../src/index.js'
 
 const reset = css`
@@ -190,3 +191,33 @@ element({
 		}, 2000)
 	}
 })
+
+element(class SlotCounter4 extends CustomElement {
+	static template = html`
+	<slot name="data-log"></slot>
+	<slot></slot>
+	`
+	static style = css`
+	:host {
+		display: block;
+	}
+	`
+	static decorate: DecorationOptions<SlotCounter4> = {
+		dataLog: slot,
+		main: slot({ default: true }),
+	}
+
+	dataLog!: HTMLElement[]
+	main!: HTMLElement[]
+
+	constructor() {
+		super()
+		let counter = 500
+		const span = document.createElement('span')
+		span.textContent = `${counter++}`
+		const span2 = span.cloneNode(true) as HTMLSpanElement
+		this.dataLog = [span]
+		this.main = [span2]
+	}
+})
+
