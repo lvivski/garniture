@@ -48,7 +48,7 @@ export function data<K extends string>(proto: Record<K, string>, key: K): void {
 	return attr({ data: true })(proto as any, key)
 }
 
-export function attr<T extends ObservedElement>(
+export function attr<T>(
 	config?: AttrConfig
 ): PropertyDecorator<T, string | boolean>
 export function attr<K extends string>(

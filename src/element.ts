@@ -3,25 +3,38 @@ import { toHyphenCase } from './helpers.js'
 import { slotted } from './slot.js'
 import { defaultTemplate } from './template.js'
 import {
-	Constructor, ClassDecorator, ObservedElement, DecorationConfig, DecorationOptions, ExpectedProperties
+	Constructor, ClassDecorator, ObservedElement, DecorationConfig, DecorationOptions, ExpectedMembers
 } from './types.js'
 
-type ElementConfig<T> = {
+type ElementConfig<TConfig extends ElementConfig<TConfig>> = {
 	name?: string
 	template?: HTMLTemplateElement
 	style?: CSSStyleSheet[]
-	decorate?: DecorationConfig<T>
+	decorate?: DecorationConfig<TConfig['decorate']>
 }
 
-type WithDecorated<TElement extends ObservedElement, TConfig extends ElementConfig<TConfig['decorate']>> = Constructor<TElement & ExpectedProperties<TConfig['decorate'], TElement>>
+type WithDecorated<TConfig extends ElementConfig<TConfig>, U>
+	= Constructor<U & ExpectedMembers<TConfig['decorate'], U>>
 
-export function element<TConfig extends ElementConfig<TConfig['decorate']>, TElement extends ObservedElement, TCtor extends WithDecorated<TElement, TConfig>>(
+export function element<
+	TConfig extends ElementConfig<TConfig>,
+	TElement extends ObservedElement,
+	TCtor extends WithDecorated<TConfig, TElement>
+>(
 	config?: string | TConfig
 ): ClassDecorator<TCtor>
-export function element<TConfig extends ElementConfig<TConfig['decorate']>, TElement extends ObservedElement, TCtor extends WithDecorated<TElement, TConfig>>(
+export function element<
+	TConfig extends ElementConfig<TConfig>,
+	TElement extends ObservedElement,
+	TCtor extends WithDecorated<TConfig, TElement>
+>(
 	constructor: TCtor
 ): TCtor
-export function element<TConfig extends ElementConfig<TConfig['decorate']>, TElement extends ObservedElement, TCtor extends WithDecorated<TElement, TConfig>>(
+export function element<
+	TConfig extends ElementConfig<TConfig>,
+	TElement extends ObservedElement,
+	TCtor extends WithDecorated<TConfig, TElement>
+>(
 	configOrCtor?: string | TConfig | TCtor
 ): ClassDecorator<TCtor> | TCtor {
 	function decorator(constructor: TCtor): TCtor {
@@ -34,7 +47,7 @@ export function element<TConfig extends ElementConfig<TConfig['decorate']>, TEle
 			}
 		}
 
-		const config = configOrCtor as ElementConfig<TConfig['decorate']>
+		const config = configOrCtor as TConfig
 		if (config.decorate) {
 			decorate<ObservedElement>(constructor, config.decorate)
 		}
@@ -62,7 +75,10 @@ export function element<TConfig extends ElementConfig<TConfig['decorate']>, TEle
 	return decorator as unknown as ClassDecorator<TCtor> // enclose
 }
 
-function customElement<TElement extends ObservedElement, TConfig extends ElementConfig<TConfig['decorate']>>(element: TElement, options: TConfig) {
+function customElement<
+	TElement extends ObservedElement,
+	TConfig extends ElementConfig<TConfig>
+>(element: TElement, options: TConfig) {
 	if (options.template || options.style) {
 		const shadowRoot = element.attachShadow({ mode: 'open' })
 

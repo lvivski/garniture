@@ -25,37 +25,32 @@ export interface ObservedElement extends HTMLElement {
 	): void
 }
 
-type PropertyNames<T> = keyof T
-
 type TypedPropertyNames<T, U> = {
 	[K in keyof T]: T[K] extends U ? K : never
-}[PropertyNames<T>]
+}[keyof T]
 
 type StringOrBoolPropertyNames<T> = TypedPropertyNames<T, string> | TypedPropertyNames<T, boolean>
 
-type DecoratablePropertyNames<T> = StringOrBoolPropertyNames<T> | TypedPropertyNames<T, HTMLElement[]> | TypedPropertyNames<T, UpdateFunction>
+type DecoratableMemberNames<T> = StringOrBoolPropertyNames<T> | TypedPropertyNames<T, HTMLElement[]> | TypedPropertyNames<T, UpdateFunction>
 
-type OmitInheritedProperties<A, B> = Omit<A, keyof B>
+export type DecoratableMembers<T> = DecoratableMemberNames<Omit<T, keyof ObservedElement>>
 
-export type DecoratableProperties<T> = DecoratablePropertyNames<OmitInheritedProperties<T, ObservedElement>>
+export type ObservablePropertiesList<T> = Array<StringOrBoolPropertyNames<Omit<T, keyof ObservedElement>>>
 
-export type ObservablePropertiesList<T> = Array<StringOrBoolPropertyNames<OmitInheritedProperties<T, ObservedElement>>>
+type MemberDecorator<T> = PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
 
 export type DecorationOptions<T> = {
-	[K in DecoratableProperties<T>]?: PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
+	[K in DecoratableMembers<T>]?: MemberDecorator<T>
 }
 
 export type DecorationConfig<T> = {
-	[key: string]: PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<ObservedElement & T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
+	[key: string]: MemberDecorator<T>
 }
 
-export type ExpectedProperties<T, U> = T extends object ? {
+export type ExpectedMembers<T, U> = T extends object ? {
 	[K in keyof T]:
-	T[K] extends PropertyDecorator<U, string | boolean> ? string :
-	T[K] extends PropertyDecorator<U, boolean> ? boolean :
-	T[K] extends PropertyDecorator<U, string> ? string :
-	T[K] extends PropertyDecorator<U, HTMLElement[]> ? HTMLElement[] :
-	T[K] extends MethodDecorator<U, UpdateFunction> ? UpdateFunction :
-	T[K] extends MethodDecorator<T, UpdateFunction> ? UpdateFunction :
+	T[K] extends PropertyDecorator<U, infer V> ? V :
+	T[K] extends MethodDecorator<U , infer V> ? V :
+	T[K] extends MethodDecorator<T, infer V> ? V :
 	never
 } : unknown

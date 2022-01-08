@@ -15,7 +15,7 @@ type SlotConfig = {
 	default: boolean
 }
 
-export function slot<T extends ObservedElement>(
+export function slot<T>(
 	config?: SlotConfig
 ): PropertyDecorator<T, HTMLElement[]>
 export function slot<K extends string>(
