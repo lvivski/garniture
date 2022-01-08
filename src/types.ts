@@ -37,11 +37,12 @@ export type DecoratableMembers<T> = DecoratableMemberNames<Omit<T, keyof Observe
 
 export type ObservablePropertiesList<T> = Array<StringOrBoolPropertyNames<Omit<T, keyof ObservedElement>>>
 
-type MemberDecorator<T> = PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
-
 export type DecorationOptions<T> = {
-	[K in DecoratableMembers<T>]?: MemberDecorator<T>
+	[K in DecoratableMembers<T>]?:
+	T[K] extends infer U ? PropertyDecorator<T, U> | MethodDecorator<T, U> : never
 }
+
+type MemberDecorator<T> = PropertyDecorator<T, boolean> | PropertyDecorator<T, string> | PropertyDecorator<T, HTMLElement[]> | MethodDecorator<T, UpdateFunction>
 
 export type DecorationConfig<T> = {
 	[key: string]: MemberDecorator<T>
