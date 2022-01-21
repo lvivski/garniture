@@ -1,4 +1,5 @@
 export * from './attr.js'
+export * from './bind.js'
 export { decorate } from './decorate.js'
 export * from './element.js'
 export * from './observe.js'
