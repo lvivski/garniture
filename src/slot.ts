@@ -50,7 +50,7 @@ export function slot<T extends ObservedElement, K extends string>(
 				const existing: boolean[] = []
 
 				this[slotted] ||= {}
-				this[slotted]![slotName] = values
+				this[slotted][slotName] = values
 				// add new elements
 				for (const value of values) {
 					if (slotName) {

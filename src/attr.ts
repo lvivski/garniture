@@ -18,7 +18,7 @@ type AttrConfig = {
 
 function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: string) {
 	proto[attributes] ||= {}
-	proto[attributes]![key] = attr
+	proto[attributes][key] = attr
 
 	const { constructor } = proto
 	let attrs = [attr]
@@ -41,11 +41,11 @@ export function getAttrName<T extends ObservedElement>(proto: T, attr: string): 
 }
 
 export function bool<K extends string>(proto: Record<K, boolean>, key: K): void {
-	return attr({ bool: true })(proto as any, key)
+	return attr({ bool: true })(proto, key)
 }
 
 export function data<K extends string>(proto: Record<K, string>, key: K): void {
-	return attr({ data: true })(proto as any, key)
+	return attr({ data: true })(proto, key)
 }
 
 export function attr<T>(

@@ -95,7 +95,7 @@ function customElement<
 			const slot = event.target as HTMLSlotElement
 
 			element[slotted] ||= {}
-			element[slotted]![slot.name] = slot.assignedElements() as HTMLElement[]
+			element[slotted][slot.name] = slot.assignedElements() as HTMLElement[]
 		})
 	}
 
@@ -108,7 +108,7 @@ function customElement<
 export class CustomElement extends HTMLElement {
 	constructor() {
 		super()
-		const ctor = this.constructor as any
+		const ctor = this.constructor
 		customElement(this, ctor)
 	}
 }

@@ -64,8 +64,8 @@ export function observe<T extends ObservedElement>(
 		}
 
 		for (const attribute of observedAttributes) {
-			proto[observed]![attribute] ||= new Set()
-			proto[observed]![attribute].add(descriptor.value as UpdateFunction)
+			proto[observed][attribute] ||= new Set()
+			proto[observed][attribute].add(descriptor.value as UpdateFunction)
 		}
 	}
 
