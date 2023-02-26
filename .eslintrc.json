@@ -9,6 +9,7 @@
 	"ignorePatterns": ["lib/*", "example/*"],
 	"rules": {
 		"quotes": ["error", "single"],
-		"indent": ["error", "tab"]
+		"indent": ["warn", "tab"],
+		"no-mixed-spaces-and-tabs": "warn"
 	}
 }

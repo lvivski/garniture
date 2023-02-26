@@ -1,5 +1,5 @@
 import { toHyphenCase } from './helpers.js'
-import { Constructor, ObservedElement, PropertyDecorator } from './types.js'
+import { ClassFieldDecorator, Constructor, ObservedElement } from './types.js'
 
 const attributes = Symbol()
 
@@ -16,7 +16,11 @@ type AttrConfig = {
 	bool?: boolean
 }
 
-function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: string) {
+function addToObserved<T extends ObservedElement>(
+	proto: T,
+	key: string,
+	attr: string,
+) {
 	proto[attributes] ||= {}
 	proto[attributes][key] = attr
 
@@ -26,7 +30,7 @@ function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: s
 	if ('observedAttributes' in constructor) {
 		const observed = (constructor as Constructor<T>).observedAttributes!
 		if (observed.includes(attr)) return
-		attrs = observed.concat(observed)
+		attrs = observed.concat(attrs)
 	}
 
 	Reflect.defineProperty(constructor, 'observedAttributes', {
@@ -36,78 +40,98 @@ function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: s
 	})
 }
 
-export function getAttrName<T extends ObservedElement>(proto: T, attr: string): string | undefined {
+export function getAttrName<T extends ObservedElement>(
+	proto: T,
+	attr: string,
+): string | undefined {
 	return proto[attributes]?.[attr]
 }
 
-export function bool<K extends string>(proto: Record<K, boolean>, key: K): void {
-	return attr({ bool: true })(proto, key)
+export function bool<K extends undefined>(
+	value: K,
+	context: ClassFieldDecoratorContext,
+) {
+	return attr({ bool: true })(value, context)
 }
 
-export function data<K extends string>(proto: Record<K, string>, key: K): void {
-	return attr({ data: true })(proto, key)
+export function data<K extends undefined>(
+	value: K,
+	context: ClassFieldDecoratorContext,
+) {
+	return attr({ data: true })(value, context)
 }
 
-export function attr<T>(
-	config?: AttrConfig
-): PropertyDecorator<T, string | boolean>
-export function attr<K extends string>(
-	proto: Record<K, boolean | string>,
-	key: K
+export function attr<T>(config?: AttrConfig): ClassFieldDecorator<T>
+export function attr<K extends undefined>(
+	value: K,
+	context: ClassFieldDecoratorContext,
 ): void
-export function attr<T extends ObservedElement, K extends string>(
-	configOrProto?: AttrConfig | T,
-	maybeKey?: K,
-): PropertyDecorator<T, string | boolean> | void {
-	function decorator(proto: T, key: string): void {
+export function attr<T extends ObservedElement, K extends undefined>(
+	configOrValue?: AttrConfig | K,
+	maybeContext?: ClassFieldDecoratorContext<T, K>,
+): ClassFieldDecorator<T, K> | void {
+	function decorator(
+		value: K,
+		{ name, addInitializer }: ClassFieldDecoratorContext<T, K>,
+	): void {
+		const key = String(name)
 		let attrName = toHyphenCase(key)
-		let descriptor
-		if (configOrProto !== proto) { // enclosed
-			const config = configOrProto as AttrConfig
-			if (config.data) {
-				attrName = `data-${attrName}`
-			}
 
-			if (config.bool) {
-				descriptor = {
-					configurable: true,
-					enumerable: true,
-					get(this: T): boolean {
-						return this.hasAttribute(attrName)
-					},
-					set(this: T, value: boolean): boolean {
-						if (value) {
-							this.setAttribute(attrName, '')
-						} else {
-							this.removeAttribute(attrName)
-						}
-						return value
+		addInitializer(function () {
+			const { constructor } = this
+			const proto = constructor.prototype
+
+			let descriptor
+			if (configOrValue !== value) {
+				// enclosed
+				const config = configOrValue as AttrConfig
+				if (config.data) {
+					attrName = `data-${attrName}`
+				}
+
+				if (config.bool) {
+					descriptor = {
+						configurable: true,
+						enumerable: true,
+						get(this: T): boolean {
+							return this.hasAttribute(attrName)
+						},
+						set(this: T, value: boolean): boolean {
+							if (value) {
+								this.setAttribute(attrName, '')
+							} else {
+								this.removeAttribute(attrName)
+							}
+							return value
+						},
 					}
 				}
 			}
-		}
 
-		if (!descriptor) {
-			descriptor = {
-				configurable: true,
-				enumerable: true,
-				get(this: T): string | null {
-					return this.getAttribute(attrName)
-				},
-				set(this: T, value: string): string {
-					this.setAttribute(attrName, value)
-					return value
+			if (!descriptor) {
+				descriptor = {
+					configurable: true,
+					enumerable: true,
+					get(this: T): string | null {
+						return this.getAttribute(attrName)
+					},
+					set(this: T, value: string): string {
+						this.setAttribute(attrName, value)
+						return value
+					},
 				}
 			}
-		}
 
-		Reflect.defineProperty(proto, key, descriptor)
-
-		addToObserved(proto, key, attrName)
+			addToObserved(proto, key, attrName)
+			Reflect.defineProperty(proto, key, descriptor)
+		})
 	}
 
 	if (arguments.length > 1) {
-		return decorator(configOrProto as T, maybeKey as string) // decorate
+		return decorator(
+			configOrValue as K,
+			maybeContext as ClassFieldDecoratorContext<T, K>,
+		) // decorate
 	}
 
 	return decorator // enclose
