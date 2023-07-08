@@ -62,11 +62,8 @@ export function data<K extends undefined>(
 }
 
 export function attr<T>(config?: AttrConfig): ClassFieldDecorator<T>
-export function attr<K extends undefined>(
-	value: K,
-	context: ClassFieldDecoratorContext,
-): void
-export function attr<T extends ObservedElement, K extends undefined>(
+export function attr<K>(value: K, context: ClassFieldDecoratorContext): void
+export function attr<T extends ObservedElement, K>(
 	configOrValue?: AttrConfig | K,
 	maybeContext?: ClassFieldDecoratorContext<T, K>,
 ): ClassFieldDecorator<T, K> | void {

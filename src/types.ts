@@ -7,14 +7,12 @@ export type ClassDecorator<T extends abstract new (...args: any) => any> = (
 	context: ClassDecoratorContext<T>,
 ) => T | void
 
-export type ClassFieldDecorator<T, K = undefined> = (
+export type ClassFieldDecorator<T, K = unknown> = (
 	value: K,
 	context: ClassFieldDecoratorContext<T, K>,
-) => ClassFieldInitializer<K>
+) => void
 
-export type ClassFieldInitializer<K = undefined> = void
-
-export type ClassMethodDecorator<T, K extends AnyMethod<T> = any> = (
+export type ClassMethodDecorator<T, K extends AnyMethod<T> = AnyMethod<T>> = (
 	value: K,
 	context: ClassMethodDecoratorContext<T, K>,
 ) => K | void
