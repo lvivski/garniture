@@ -1,11 +1,10 @@
 export type UpdateFunction = () => void
 
-export type AnyMethod<T> = (this: T, ...args: any) => any
+export type AnyMethod<T> = (this: T, ...args: unknown[]) => unknown
 
-export type ClassDecorator<T extends abstract new (...args: any) => any> = (
-	value: T,
-	context: ClassDecoratorContext<T>,
-) => T | void
+export type ClassDecorator<
+	T extends abstract new (...args: unknown[]) => unknown,
+> = (value: T, context: ClassDecoratorContext<T>) => T | void
 
 export type ClassFieldDecorator<T, K = unknown> = (
 	value: K,
