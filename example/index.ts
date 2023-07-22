@@ -28,9 +28,9 @@ const red = css`
 
 @element
 class SomeTag extends HTMLElement {
-	@attr one: string = 'one'
-	@bool two: boolean = false
-	@data three: string = 'three'
+	@attr one = 'one'
+	@bool two = false
+	@bool three = 'three'
 
 	@observe(['one', 'three'])
 	update() {
@@ -92,6 +92,7 @@ class SlotCounter extends HTMLElement {
 	connectedCallback() {
 		let counter = 0
 		setInterval(() => {
+			console.log('tick')
 			const span = document.createElement('span')
 			span.textContent = `${counter++}`
 			const span2 = span.cloneNode(true) as HTMLSpanElement

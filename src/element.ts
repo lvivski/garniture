@@ -2,6 +2,7 @@ import { toHyphenCase } from './helpers.js'
 import { slotted } from './slot.js'
 import { defaultTemplate } from './template.js'
 import { Constructor, ClassDecorator, ObservedElement } from './types.js'
+import { addToObserved } from './attr.js'
 
 type ElementConfig = {
 	name?: string
@@ -30,7 +31,15 @@ export function element<
 		constructor: TCtor,
 		{ name, addInitializer }: ClassDecoratorContext<TCtor>,
 	): TCtor {
-		addInitializer(function (this: TCtor) {
+		for (const prop of Object.getOwnPropertyNames(constructor.prototype)) {
+			if (prop === 'constructor') continue
+			addToObserved(constructor.prototype, prop)
+		}
+
+		console.log(constructor.prototype)
+		console.log(constructor.observedAttributes)
+
+		addInitializer(function () {
 			let tagName = toHyphenCase(String(name))
 			if (configOrCtor !== constructor) {
 				// enclosed

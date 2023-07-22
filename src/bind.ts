@@ -5,13 +5,11 @@ export function bind<T extends ObservedElement>(selector: string) {
 		_value: undefined,
 		{ name, addInitializer }: ClassFieldDecoratorContext<T>,
 	): void {
-		addInitializer(function (this: T) {
-			const { constructor } = this as T
-			const proto = constructor.prototype
-			Reflect.defineProperty(proto, name, {
+		addInitializer(function () {
+			Reflect.defineProperty(this, name, {
 				configurable: true,
 				enumerable: true,
-				get(this: T): HTMLElement | null {
+				get(): HTMLElement | null {
 					return this.querySelector(selector)
 				},
 			})

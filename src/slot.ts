@@ -28,13 +28,10 @@ export function slot<T extends ObservedElement, K extends undefined>(
 		value: K,
 		{ name, addInitializer }: ClassFieldDecoratorContext<T, K>,
 	): void {
-		addInitializer(function (this: T) {
-			const { constructor } = this
-			const proto = constructor.prototype
-
+		addInitializer(function () {
 			const key = String(name)
-
 			let slotName = toHyphenCase(key)
+
 			let config: SlotConfig
 			if (configOrValue !== value) {
 				// enclosed
@@ -43,7 +40,7 @@ export function slot<T extends ObservedElement, K extends undefined>(
 					slotName = ''
 				}
 			}
-			Reflect.defineProperty(proto, key, {
+			Reflect.defineProperty((this as any).__proto__, key, {
 				configurable: true,
 				enumerable: true,
 				get(this: T): HTMLElement[] {

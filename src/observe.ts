@@ -38,7 +38,7 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 	): void {
 		addInitializer(function () {
 			const { constructor } = this
-			const proto = constructor.prototype
+			const proto = Object.getPrototypeOf(this)
 
 			let observedAttributes: string[]
 
@@ -59,10 +59,10 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 					(constructor as Constructor<T>).observedAttributes || []
 			}
 
-			if (!proto[observed]) {
-				proto[observed] = {}
-				const attributeChangedCallback = proto.attributeChangedCallback
-				proto.attributeChangedCallback = function (
+			if (!this[observed]) {
+				this[observed] = {}
+				const attributeChangedCallback = this.attributeChangedCallback
+				this.attributeChangedCallback = function (
 					attributeName: string,
 					oldValue: string | null,
 					newValue: string | null,
@@ -83,7 +83,7 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 					}
 					if (oldValue === newValue) return
 
-					const updaters = this[observed][attributeName]
+					const updaters = this[observed]?.[attributeName]
 					if (updaters) {
 						for (const updater of updaters) {
 							updater.call(this)
@@ -93,8 +93,8 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 			}
 
 			for (const attribute of observedAttributes) {
-				proto[observed][attribute] ||= new Set()
-				proto[observed][attribute].add(value as UpdateFunction)
+				this[observed][attribute] ||= new Set()
+				this[observed][attribute].add(value as UpdateFunction)
 			}
 		})
 	}

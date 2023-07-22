@@ -2,13 +2,14 @@
 	"compilerOptions": {
 		"declaration": true,
 		"forceConsistentCasingInFileNames": true,
-		"lib": ["es2020", "dom", "dom.iterable"],
-		"module": "es2020",
+		"lib": ["es2022", "dom", "dom.iterable"],
+		"module": "es2022",
 		"moduleResolution": "node",
 		"outDir": "lib",
 		"sourceMap": true,
 		"strict": true,
-		"target": "es2020",
+		"target": "es2022",
+		"useDefineForClassFields": false,
 		"rootDir": "./src"
 	},
 	"include": ["src"],

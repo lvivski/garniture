@@ -16,11 +16,11 @@ type AttrConfig = {
 	bool?: boolean
 }
 
-function addToObserved<T extends ObservedElement>(
+export function addToObserved<T extends ObservedElement>(
 	proto: T,
 	key: string,
-	attr: string,
 ) {
+	const attr = toHyphenCase(key)
 	proto[attributes] ||= {}
 	proto[attributes][key] = attr
 
@@ -61,7 +61,9 @@ export function data<K extends undefined>(
 	return attr({ data: true })(value, context)
 }
 
-export function attr<T>(config?: AttrConfig): ClassFieldDecorator<T>
+export function attr<T extends ObservedElement, K>(
+	config?: AttrConfig,
+): ClassFieldDecorator<T, K>
 export function attr<K>(value: K, context: ClassFieldDecoratorContext): void
 export function attr<T extends ObservedElement, K>(
 	configOrValue?: AttrConfig | K,
@@ -71,14 +73,11 @@ export function attr<T extends ObservedElement, K>(
 		value: K,
 		{ name, addInitializer }: ClassFieldDecoratorContext<T, K>,
 	): void {
-		const key = String(name)
-		let attrName = toHyphenCase(key)
-
 		addInitializer(function () {
-			const { constructor } = this
-			const proto = constructor.prototype
+			const key = String(name)
+			let attrName = toHyphenCase(key)
 
-			let descriptor
+			let descriptor: PropertyDescriptor | undefined
 			if (configOrValue !== value) {
 				// enclosed
 				const config = configOrValue as AttrConfig
@@ -119,8 +118,7 @@ export function attr<T extends ObservedElement, K>(
 				}
 			}
 
-			addToObserved(proto, key, attrName)
-			Reflect.defineProperty(proto, key, descriptor)
+			Reflect.defineProperty(this, key, descriptor)
 		})
 	}
 
