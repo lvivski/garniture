@@ -67,12 +67,6 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 					oldValue: string | null,
 					newValue: string | null,
 				): void {
-					console.log(
-						'attributeChangedCallback',
-						attributeName,
-						oldValue,
-						newValue,
-					)
 					if (attributeChangedCallback) {
 						attributeChangedCallback.call(
 							this,

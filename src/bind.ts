@@ -6,7 +6,7 @@ export function bind<T extends ObservedElement>(selector: string) {
 		{ name, addInitializer }: ClassFieldDecoratorContext<T>,
 	): void {
 		addInitializer(function () {
-			Reflect.defineProperty(this, name, {
+			Object.defineProperty(this, name, {
 				configurable: true,
 				enumerable: true,
 				get(): HTMLElement | null {

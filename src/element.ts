@@ -36,9 +36,6 @@ export function element<
 			addToObserved(constructor.prototype, prop)
 		}
 
-		console.log(constructor.prototype)
-		console.log(constructor.observedAttributes)
-
 		addInitializer(function () {
 			let tagName = toHyphenCase(String(name))
 			if (configOrCtor !== constructor) {

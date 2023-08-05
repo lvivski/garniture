@@ -8,10 +8,10 @@ export type ClassDecorator<T extends AnyConstructor> = (
 	context: ClassDecoratorContext<T>,
 ) => T | void
 
-export type ClassFieldDecorator<T, K = unknown> = (
-	value: K,
-	context: ClassFieldDecoratorContext<T, K>,
-) => void// | ((value: K) => K)
+export type ClassAccessorDecorator<T, K = unknown> = (
+	value: ClassAccessorDecoratorTarget<T, K>,
+	context: ClassAccessorDecoratorContext,
+) => ClassAccessorDecoratorResult<T, K>
 
 export type ClassMethodDecorator<T, K extends AnyMethod<T> = AnyMethod<T>> = (
 	value: K,

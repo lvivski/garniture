@@ -28,9 +28,12 @@ const red = css`
 
 @element
 class SomeTag extends HTMLElement {
-	@attr one = 'one'
-	@bool two = false
-	@bool three = 'three'
+	@attr
+	accessor one = 'one'
+	@bool
+	accessor two = false
+	@data
+	accessor three = 'three'
 
 	@observe(['one', 'three'])
 	update() {
@@ -54,7 +57,8 @@ class SomeTag extends HTMLElement {
 	`,
 })
 class PurpleHeader extends HTMLElement {
-	@attr greeting: string = 'Hello'
+	@attr({ data: true })
+	accessor greeting = 'Hello'
 
 	constructor() {
 		super()
@@ -83,16 +87,16 @@ class RedText extends HTMLElement {}
 	`,
 })
 class SlotCounter extends HTMLElement {
-	@slot dataLog: HTMLElement[] = []
+	@slot
+	accessor dataLog: HTMLElement[] = []
 	@slot({
 		default: true,
 	})
-	main: HTMLElement[] = []
+	accessor main: HTMLElement[] = []
 
 	connectedCallback() {
 		let counter = 0
 		setInterval(() => {
-			console.log('tick')
 			const span = document.createElement('span')
 			span.textContent = `${counter++}`
 			const span2 = span.cloneNode(true) as HTMLSpanElement
