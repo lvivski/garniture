@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"declaration": true,
 		"forceConsistentCasingInFileNames": true,
-		"lib": ["es2022", "dom", "dom.iterable"],
+		"lib": ["es2022", "dom", "dom.iterable", "esnext.decorators"],
 		"module": "es2022",
 		"moduleResolution": "node",
 		"outDir": "lib",

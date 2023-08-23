@@ -17,7 +17,7 @@
 		"@typescript-eslint/eslint-plugin": "^5",
 		"@typescript-eslint/parser": "^5",
 		"eslint": "^8",
-		"typescript": "^5"
+		"typescript": "^5.2.0-beta"
 	},
 	"prettier": {
 		"singleQuote": true,

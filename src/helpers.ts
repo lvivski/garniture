@@ -142,3 +142,6 @@ if (!supportsConstructableStyleSheets) {
 	// @ts-expect-error: replaces default implementation
 	window.CSSStyleSheet = ConstructableStyleSheet as CSSStyleSheet
 }
+
+// @ts-expect-error: replaces default implementation
+Symbol.metadata ??= Symbol('metadata')

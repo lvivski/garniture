@@ -1,54 +1,28 @@
 import { toHyphenCase } from './helpers.js'
-import {
-	ClassAccessorDecorator,
-	Constructor,
-	ObservedElement,
-} from './types.js'
+import { ClassAccessorDecorator, ObservedElement } from './types.js'
 
-const attributes = Symbol()
-
-declare module './types.js' {
-	interface ObservedElement {
-		[attributes]?: {
-			[key: string]: string
-		}
-	}
-}
+const attributesMap = new WeakMap<DecoratorMetadata, Record<string, string>>()
 
 type AttrConfig = {
 	data?: boolean
 	bool?: boolean
 }
 
-export function addToObserved<T extends ObservedElement>(
-	proto: T,
-	key: string,
-) {
-	const attr = toHyphenCase(key)
-	proto[attributes] ||= {}
-	proto[attributes][key] = attr
-
-	const { constructor } = proto
-	let attrs = [attr]
-
-	if ('observedAttributes' in constructor) {
-		const observed = (constructor as Constructor<T>).observedAttributes!
-		if (observed.includes(attr)) return
-		attrs = observed.concat(attrs)
-	}
-
-	Object.defineProperty(constructor, 'observedAttributes', {
-		configurable: true,
-		enumerable: true,
-		value: attrs,
-	})
+function addToObserved(metadata: DecoratorMetadata, key: string, attr: string) {
+	const attributes = attributesMap.get(metadata) ?? {}
+	attributes[key] = attr
+	attributesMap.set(metadata, attributes)
 }
 
-export function getAttrName<T extends ObservedElement>(
-	proto: T,
+export function getAttributes(metadata: DecoratorMetadata) {
+	return Object.values(attributesMap.get(metadata) ?? {})
+}
+
+export function getAttrName(
+	metadata: DecoratorMetadata,
 	attr: string,
 ): string | undefined {
-	return proto[attributes]?.[attr]
+	return attributesMap.get(metadata)?.[attr]
 }
 
 export function bool<T extends ObservedElement, K extends boolean>(
@@ -81,10 +55,25 @@ export function attr<
 ): ClassAccessorDecorator<T, K> | ClassAccessorDecoratorResult<T, K> {
 	function decorator(
 		value: ClassAccessorDecoratorTarget<T, K>,
-		{ name }: ClassAccessorDecoratorContext<T, K>,
+		{ name, metadata }: ClassAccessorDecoratorContext<T, K>,
 	): ClassAccessorDecoratorResult<T, K> {
 		const key = String(name)
 		let attrName = toHyphenCase(key)
+
+		let result: ClassAccessorDecoratorResult<T, K> = {
+			get(this: T): K {
+				console.log(attrName)
+				return this.getAttribute(attrName) as K
+			},
+			set(this: T, value: K): K {
+				this.setAttribute(attrName, (value as string) ?? '')
+				return value
+			},
+			init(this: T, initialValue: K) {
+				this.setAttribute(attrName, (initialValue as string) ?? '')
+				return initialValue
+			},
+		}
 
 		if (configOrValue !== value) {
 			// enclosed
@@ -94,7 +83,7 @@ export function attr<
 			}
 
 			if (config.bool) {
-				return {
+				result = {
 					get(this: T): K {
 						return this.hasAttribute(attrName) as K
 					},
@@ -116,19 +105,9 @@ export function attr<
 			}
 		}
 
-		return {
-			get(this: T): K {
-				return this.getAttribute(attrName) as K
-			},
-			set(this: T, value: K): K {
-				this.setAttribute(attrName, (value as string) ?? '')
-				return value
-			},
-			init(this: T, initialValue: K) {
-				this.setAttribute(attrName, (initialValue as string) ?? '')
-				return initialValue
-			},
-		}
+		addToObserved(metadata, key, attrName)
+
+		return result
 	}
 
 	if (arguments.length > 1) {

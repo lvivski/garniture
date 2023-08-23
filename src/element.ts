@@ -2,7 +2,8 @@ import { toHyphenCase } from './helpers.js'
 import { slotted } from './slot.js'
 import { defaultTemplate } from './template.js'
 import { Constructor, ClassDecorator, ObservedElement } from './types.js'
-import { addToObserved } from './attr.js'
+import { getAttributes } from './attr.js'
+import { getObserved } from './observe.js'
 
 type ElementConfig = {
 	name?: string
@@ -28,29 +29,40 @@ export function element<
 	maybeContext?: ClassDecoratorContext<TCtor>,
 ): ClassDecorator<TCtor> | TCtor {
 	function decorator(
-		constructor: TCtor,
-		{ name, addInitializer }: ClassDecoratorContext<TCtor>,
+		Ctor: TCtor,
+		{ name, metadata }: ClassDecoratorContext<TCtor>,
 	): TCtor {
-		for (const prop of Object.getOwnPropertyNames(constructor.prototype)) {
-			if (prop === 'constructor') continue
-			addToObserved(constructor.prototype, prop)
+		let tagName = toHyphenCase(String(name))
+		if (configOrCtor !== Ctor) {
+			// enclosed
+			if (typeof configOrCtor === 'string') {
+				tagName = configOrCtor
+			} else if (configOrCtor?.name) {
+				tagName = configOrCtor.name
+			}
 		}
 
-		addInitializer(function () {
-			let tagName = toHyphenCase(String(name))
-			if (configOrCtor !== constructor) {
-				// enclosed
-				if (typeof configOrCtor === 'string') {
-					tagName = configOrCtor
-				} else if (configOrCtor?.name) {
-					tagName = configOrCtor.name
+		const attributeChangedCallback = function (
+			this: TElement,
+			attributeName: string,
+			oldValue: string | null,
+			newValue: string | null,
+		): void {
+			if (oldValue === newValue) return
+			console.log(attributeName, oldValue, newValue)
+			const updaters = getObserved(metadata)[attributeName]
+			if (updaters) {
+				for (const updater of updaters) {
+					updater.call(this)
 				}
 			}
+		}
 
-			customElements.define(tagName, this)
+		Object.defineProperty(Ctor.prototype, 'attributeChangedCallback', {
+			value: attributeChangedCallback,
 		})
 
-		const ProxyElement = new Proxy(constructor, {
+		const ProxyElement = new Proxy(Ctor, {
 			construct(target, args, newTarget) {
 				const element: TElement = Reflect.construct(target, args, newTarget)
 
@@ -60,8 +72,15 @@ export function element<
 
 				return element
 			},
+			get(target, key, receiver) {
+				if (key === 'observedAttributes') {
+					return getAttributes(metadata)
+				}
+				return Reflect.get(target, key, receiver)
+			},
 		})
 
+		customElements.define(tagName, ProxyElement)
 		return ProxyElement as TCtor
 	}
 

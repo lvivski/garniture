@@ -1,7 +1,6 @@
-import { getAttrName } from './attr.js'
+import { getAttrName, getAttributes } from './attr.js'
 import { toHyphenCase } from './helpers.js'
 import {
-	Constructor,
 	ObservablePropertiesList,
 	ObservedElement,
 	UpdateFunction,
@@ -9,14 +8,13 @@ import {
 	ClassMethodDecorator,
 } from './types.js'
 
-const observed = Symbol()
+const observedMap = new WeakMap<
+	DecoratorMetadata,
+	Record<string, Set<UpdateFunction>>
+>()
 
-declare module './types.js' {
-	interface ObservedElement {
-		[observed]?: {
-			[key: string]: Set<UpdateFunction>
-		}
-	}
+export function getObserved(metadata: DecoratorMetadata) {
+	return observedMap.get(metadata) ?? {}
 }
 
 export function observe<T>(
@@ -34,63 +32,32 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 ): ClassMethodDecorator<T, K> | void {
 	function decorator(
 		value: K,
-		{ addInitializer }: ClassMethodDecoratorContext<T, K>,
+		{ metadata }: ClassMethodDecoratorContext<T, K>,
 	): void {
-		addInitializer(function () {
-			const { constructor } = this
-			const proto = Object.getPrototypeOf(this)
+		let observedAttributes: string[]
 
-			let observedAttributes: string[]
+		if (propertiesOrValue !== value) {
+			// enclosed
+			const properties = propertiesOrValue as ObservablePropertiesList<T>
+			observedAttributes =
+				properties && properties.length
+					? properties.map(
+							(attribute) =>
+								getAttrName(metadata, attribute as string) ||
+								toHyphenCase(attribute as string),
+					  )
+					: getAttributes(metadata) || []
+		} else {
+			// decorated
+			observedAttributes = getAttributes(metadata) || []
+		}
 
-			if (propertiesOrValue !== value) {
-				// enclosed
-				const properties = propertiesOrValue as ObservablePropertiesList<T>
-				observedAttributes =
-					properties && properties.length
-						? properties.map(
-								(attribute) =>
-									getAttrName(proto, attribute as string) ||
-									toHyphenCase(attribute as string),
-						  )
-						: (constructor as Constructor<T>).observedAttributes || []
-			} else {
-				// decorated
-				observedAttributes =
-					(constructor as Constructor<T>).observedAttributes || []
-			}
-
-			if (!this[observed]) {
-				this[observed] = {}
-				const attributeChangedCallback = this.attributeChangedCallback
-				this.attributeChangedCallback = function (
-					attributeName: string,
-					oldValue: string | null,
-					newValue: string | null,
-				): void {
-					if (attributeChangedCallback) {
-						attributeChangedCallback.call(
-							this,
-							attributeName,
-							oldValue,
-							newValue,
-						)
-					}
-					if (oldValue === newValue) return
-
-					const updaters = this[observed]?.[attributeName]
-					if (updaters) {
-						for (const updater of updaters) {
-							updater.call(this)
-						}
-					}
-				}
-			}
-
-			for (const attribute of observedAttributes) {
-				this[observed][attribute] ||= new Set()
-				this[observed][attribute].add(value as UpdateFunction)
-			}
-		})
+		const observed = observedMap.get(metadata) ?? {}
+		for (const attribute of observedAttributes) {
+			observed[attribute] ??= new Set()
+			observed[attribute].add(value as UpdateFunction)
+		}
+		observedMap.set(metadata, observed)
 	}
 
 	if (arguments.length > 1) {

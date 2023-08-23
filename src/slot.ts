@@ -55,7 +55,7 @@ export function slot<T extends ObservedElement, K extends HTMLElement[]>(
 				).slice() as HTMLElement[]
 				const existing: boolean[] = []
 
-				this[slotted] ||= {}
+				this[slotted] ??= {}
 				this[slotted][slotName] = values
 
 				// add new elements
