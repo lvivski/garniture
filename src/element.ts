@@ -49,7 +49,7 @@ export function element<
 			newValue: string | null,
 		): void {
 			if (oldValue === newValue) return
-			console.log(attributeName, oldValue, newValue)
+			console.log('attributeChangedCallback', attributeName, oldValue, newValue)
 			const updaters = getObserved(metadata)[attributeName]
 			if (updaters) {
 				for (const updater of updaters) {
