@@ -1,7 +1,11 @@
 import { toHyphenCase } from './helpers.js'
 import { slotted } from './slot.js'
 import { defaultTemplate } from './template.js'
-import { Constructor, ClassDecorator, ObservedElement } from './types.js'
+import {
+	ObservedConstructor,
+	ClassDecorator,
+	ObservedElement,
+} from './types.js'
 import { getAttributes } from './attr.js'
 import { getObserved, hasObserved } from './observe.js'
 
@@ -14,16 +18,16 @@ type ElementConfig = {
 export function element<
 	TConfig extends ElementConfig,
 	TElement extends ObservedElement,
-	TCtor extends Constructor<TElement>,
+	TCtor extends ObservedConstructor<TElement>,
 >(config?: string | TConfig): ClassDecorator<TCtor>
 export function element<
 	TElement extends ObservedElement,
-	TCtor extends Constructor<TElement>,
+	TCtor extends ObservedConstructor<TElement>,
 >(constructor: TCtor, context: ClassDecoratorContext<TCtor>): TCtor
 export function element<
 	TConfig extends ElementConfig,
 	TElement extends ObservedElement,
-	TCtor extends Constructor<TElement>,
+	TCtor extends ObservedConstructor<TElement>,
 >(
 	configOrCtor?: string | TConfig | TCtor,
 	maybeContext?: ClassDecoratorContext<TCtor>,
@@ -49,8 +53,15 @@ export function element<
 				attributeName: string,
 				oldValue: string | null,
 				newValue: string | null,
+				namespace?: string,
 			): void {
-				attributeChangedCallback?.call(this, attributeName, oldValue, newValue)
+				attributeChangedCallback?.call(
+					this,
+					attributeName,
+					oldValue,
+					newValue,
+					namespace,
+				)
 				if (oldValue === newValue) return
 				const updaters = getObserved(metadata)[attributeName]
 				if (updaters) {

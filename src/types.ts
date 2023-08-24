@@ -18,7 +18,7 @@ export type ClassMethodDecorator<T, K extends AnyMethod<T> = AnyMethod<T>> = (
 	context: ClassMethodDecoratorContext<T, K>,
 ) => K | void
 
-export interface Constructor<T> {
+export interface ObservedConstructor<T> {
 	new (...args: unknown[]): T
 	observedAttributes?: string[]
 }
@@ -41,15 +41,6 @@ type TypedPropertyNames<T, U> = {
 type StringOrBoolPropertyNames<T> =
 	| TypedPropertyNames<T, string>
 	| TypedPropertyNames<T, boolean>
-
-type DecoratableMemberNames<T> =
-	| StringOrBoolPropertyNames<T>
-	| TypedPropertyNames<T, HTMLElement[]>
-	| TypedPropertyNames<T, UpdateFunction>
-
-export type DecoratableMembers<T> = DecoratableMemberNames<
-	Omit<T, keyof ObservedElement>
->
 
 export type ObservablePropertiesList<T> = Array<
 	StringOrBoolPropertyNames<Omit<T, keyof ObservedElement>>
