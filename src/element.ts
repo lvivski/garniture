@@ -3,7 +3,7 @@ import { slotted } from './slot.js'
 import { defaultTemplate } from './template.js'
 import { Constructor, ClassDecorator, ObservedElement } from './types.js'
 import { getAttributes } from './attr.js'
-import { getObserved } from './observe.js'
+import { getObserved, hasObserved } from './observe.js'
 
 type ElementConfig = {
 	name?: string
@@ -42,25 +42,34 @@ export function element<
 			}
 		}
 
-		const attributeChangedCallback = function (
-			this: TElement,
-			attributeName: string,
-			oldValue: string | null,
-			newValue: string | null,
-		): void {
-			if (oldValue === newValue) return
-			console.log('attributeChangedCallback', attributeName, oldValue, newValue)
-			const updaters = getObserved(metadata)[attributeName]
-			if (updaters) {
-				for (const updater of updaters) {
-					updater.call(this)
+		if (hasObserved(metadata)) {
+			const proto = Ctor.prototype
+			const attributeChangedCallback = proto.attributeChangedCallback
+			proto.attributeChangedCallback = function (
+				attributeName: string,
+				oldValue: string | null,
+				newValue: string | null,
+			): void {
+				attributeChangedCallback?.call(this, attributeName, oldValue, newValue)
+				if (oldValue === newValue) return
+				const updaters = getObserved(metadata)[attributeName]
+				if (updaters) {
+					for (const updater of updaters) {
+						updater.call(this)
+					}
 				}
 			}
-		}
 
-		Object.defineProperty(Ctor.prototype, 'attributeChangedCallback', {
-			value: attributeChangedCallback,
-		})
+			const attrs = getAttributes(metadata).concat(
+				Ctor.observedAttributes ?? [],
+			)
+
+			Reflect.defineProperty(Ctor, 'observedAttributes', {
+				configurable: true,
+				enumerable: true,
+				value: attrs,
+			})
+		}
 
 		const ProxyElement = new Proxy(Ctor, {
 			construct(target, args, newTarget) {
@@ -71,12 +80,6 @@ export function element<
 				}
 
 				return element
-			},
-			get(target, key, receiver) {
-				if (key === 'observedAttributes') {
-					return getAttributes(metadata)
-				}
-				return Reflect.get(target, key, receiver)
 			},
 		})
 

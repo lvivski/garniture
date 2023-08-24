@@ -17,6 +17,10 @@ export function getObserved(metadata: DecoratorMetadata) {
 	return observedMap.get(metadata) ?? {}
 }
 
+export function hasObserved(metadata: DecoratorMetadata) {
+	return observedMap.has(metadata)
+}
+
 export function observe<T>(
 	properties?: T extends ObservedElement
 		? ObservablePropertiesList<T>

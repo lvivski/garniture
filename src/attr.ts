@@ -8,7 +8,11 @@ type AttrConfig = {
 	bool?: boolean
 }
 
-function addToObserved(metadata: DecoratorMetadata, key: string, attr: string) {
+function addToAttributes(
+	metadata: DecoratorMetadata,
+	key: string,
+	attr: string,
+) {
 	const attributes = attributesMap.get(metadata) ?? {}
 	attributes[key] = attr
 	attributesMap.set(metadata, attributes)
@@ -62,16 +66,13 @@ export function attr<
 
 		let result: ClassAccessorDecoratorResult<T, K> = {
 			get(this: T): K {
-				console.log('get', attrName)
 				return this.getAttribute(attrName) as K
 			},
 			set(this: T, value: K): K {
-				console.log('set', attrName, value)
 				this.setAttribute(attrName, (value as string) ?? '')
 				return value
 			},
 			init(this: T, initialValue: K) {
-				console.log('init', attrName, initialValue)
 				this.setAttribute(attrName, (initialValue as string) ?? '')
 				return initialValue
 			},
@@ -107,7 +108,7 @@ export function attr<
 			}
 		}
 
-		addToObserved(metadata, key, attrName)
+		addToAttributes(metadata, key, attrName)
 
 		return result
 	}
