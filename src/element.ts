@@ -1,5 +1,5 @@
 import { toHyphenCase } from './helpers.js'
-import { slotted } from './slot.js'
+import { setSlotted } from './slot.js'
 import { defaultTemplate } from './template.js'
 import {
 	ObservedConstructor,
@@ -125,9 +125,7 @@ function customElement<
 	if (element.shadowRoot) {
 		element.shadowRoot.addEventListener('slotchange', (event) => {
 			const slot = event.target as HTMLSlotElement
-
-			element[slotted] ??= {}
-			element[slotted][slot.name] = slot.assignedElements() as HTMLElement[]
+			setSlotted(element, slot.name, slot.assignedElements() as HTMLElement[])
 		})
 	}
 }
