@@ -59,8 +59,10 @@ export function attr<
 ): ClassAccessorDecorator<T, K> | ClassAccessorDecoratorResult<T, K> {
 	function decorator(
 		value: ClassAccessorDecoratorTarget<T, K>,
-		{ name, metadata }: ClassAccessorDecoratorContext<T, K>,
-	): ClassAccessorDecoratorResult<T, K> {
+		{ kind, name, metadata }: ClassAccessorDecoratorContext<T, K>,
+	) {
+		if (kind !== 'accessor') return value
+
 		const key = String(name)
 		let attrName = toHyphenCase(key)
 
@@ -116,7 +118,7 @@ export function attr<
 	if (arguments.length > 1) {
 		return decorator(
 			configOrValue as ClassAccessorDecoratorTarget<T, K>,
-			maybeContext as ClassAccessorDecoratorContext<T, K>,
+			maybeContext!,
 		) // decorate
 	}
 

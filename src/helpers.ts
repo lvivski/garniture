@@ -59,7 +59,9 @@ function ConstructableStyleSheet(this: ConstructableStyleSheet) {
 	}
 }
 
-ConstructableStyleSheet.prototype = Object.create(CSSStyleSheet)
+ConstructableStyleSheet.prototype = Object.create(
+	CSSStyleSheet,
+) as CSSStyleSheet
 
 Object.defineProperty(ConstructableStyleSheet.prototype, 'cssRules', {
 	configurable: true,
@@ -71,6 +73,7 @@ Object.defineProperty(ConstructableStyleSheet.prototype, 'cssRules', {
 
 // TODO implement insertRule and deleteRule
 ConstructableStyleSheet.prototype.replace = function (
+	this: ConstructableStyleSheet,
 	contents: string,
 ): Promise<ConstructableStyleSheet> {
 	try {
@@ -81,13 +84,15 @@ ConstructableStyleSheet.prototype.replace = function (
 	}
 }
 
-ConstructableStyleSheet.prototype.replaceSync = function (contents: string) {
+ConstructableStyleSheet.prototype.replaceSync = function (
+	this: ConstructableStyleSheet,
+	contents: string,
+) {
 	const style = this[styles]
 	const css = contents.replace(/@import.+?;?$/gm, '')
 
 	style.main.textContent = css
-	for (let i = 0; i < style.adopted.length; i++) {
-		const adopted = style.adopted[i]
+	for (const adopted of style.adopted) {
 		adopted.textContent = css
 	}
 }
@@ -97,15 +102,13 @@ if (!supportsConstructableStyleSheets) {
 		configurable: true,
 		enumerable: true,
 		get(this: ShadowRoot): ConstructableStyleSheet[] {
-			return this[adopted] || []
+			return this[adopted] ?? []
 		},
 		set(this: ShadowRoot, values: ConstructableStyleSheet[] = []) {
 			if (!Array.isArray(values)) {
 				throw new TypeError('Value must be an Array')
 			}
-			const previous = (
-				this[adopted] || []
-			).slice() as ConstructableStyleSheet[]
+			const previous = (this[adopted] ?? []).slice()
 			const existing: boolean[] = []
 
 			this[adopted] = values

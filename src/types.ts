@@ -42,6 +42,6 @@ type StringOrBoolPropertyNames<T> =
 	| TypedPropertyNames<T, string>
 	| TypedPropertyNames<T, boolean>
 
-export type ObservablePropertiesList<T> = Array<
-	StringOrBoolPropertyNames<Omit<T, keyof ObservedElement>>
->
+export type ObservablePropertiesList<T> = StringOrBoolPropertyNames<
+	Omit<T, keyof ObservedElement>
+>[]

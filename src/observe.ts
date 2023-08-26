@@ -24,7 +24,7 @@ export function hasObserved(metadata: DecoratorMetadata) {
 export function observe<T>(
 	properties?: T extends ObservedElement
 		? ObservablePropertiesList<T>
-		: Array<keyof T>,
+		: (keyof T)[],
 ): ClassMethodDecorator<T>
 export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 	value: K,
@@ -36,21 +36,22 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 ): ClassMethodDecorator<T, K> | void {
 	function decorator(
 		value: K,
-		{ metadata }: ClassMethodDecoratorContext<T, K>,
+		{ kind, metadata }: ClassMethodDecoratorContext<T, K>,
 	): void {
+		if (kind !== 'method') return
+
 		let observedAttributes: string[]
 
 		if (propertiesOrValue !== value) {
 			// enclosed
 			const properties = propertiesOrValue as ObservablePropertiesList<T>
-			observedAttributes =
-				properties && properties.length
-					? properties.map(
-							(attribute) =>
-								getAttrName(metadata, attribute as string) ||
-								toHyphenCase(attribute as string),
-					  )
-					: getAttributes(metadata) || []
+			observedAttributes = properties?.length
+				? properties.map(
+						(attribute) =>
+							getAttrName(metadata, attribute as string) ??
+							toHyphenCase(attribute as string),
+				  )
+				: getAttributes(metadata) || []
 		} else {
 			// decorated
 			observedAttributes = getAttributes(metadata) || []
@@ -65,10 +66,7 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 	}
 
 	if (arguments.length > 1) {
-		return decorator(
-			propertiesOrValue as K,
-			maybeContext as ClassMethodDecoratorContext<T, K>,
-		) // decorate
+		return decorator(propertiesOrValue as K, maybeContext!) // decorate
 	}
 
 	return decorator // enclose

@@ -5,9 +5,7 @@ export const slotted = Symbol()
 
 declare module './types.js' {
 	interface ObservedElement {
-		[slotted]?: {
-			[key: string]: HTMLElement[]
-		}
+		[slotted]?: Record<string, HTMLElement[]>
 	}
 }
 
@@ -28,8 +26,10 @@ export function slot<T extends ObservedElement, K extends HTMLElement[]>(
 ): ClassAccessorDecorator<T, K> | ClassAccessorDecoratorResult<T, K> {
 	function decorator(
 		value: ClassAccessorDecoratorTarget<T, K>,
-		{ name }: ClassAccessorDecoratorContext<T, K>,
+		{ kind, name }: ClassAccessorDecoratorContext<T, K>,
 	): ClassAccessorDecoratorResult<T, K> {
+		if (kind !== 'accessor') return value
+
 		const key = String(name)
 		let slotName = toHyphenCase(key)
 
@@ -44,15 +44,13 @@ export function slot<T extends ObservedElement, K extends HTMLElement[]>(
 
 		return {
 			get(this: T): K {
-				return (this[slotted]?.[slotName] || []) as K
+				return (this[slotted]?.[slotName] ?? []) as K
 			},
 			set(this: T, values: HTMLElement[] = []): void {
 				if (!Array.isArray(values)) {
 					throw new TypeError('Value must be an Array')
 				}
-				const previous = (
-					this[slotted]?.[slotName] || []
-				).slice() as HTMLElement[]
+				const previous = (this[slotted]?.[slotName] ?? []).slice()
 				const existing: boolean[] = []
 
 				this[slotted] ??= {}
@@ -86,7 +84,7 @@ export function slot<T extends ObservedElement, K extends HTMLElement[]>(
 	if (arguments.length > 1) {
 		return decorator(
 			configOrValue as ClassAccessorDecoratorTarget<T, K>,
-			maybeContext as ClassAccessorDecoratorContext<T, K>,
+			maybeContext!,
 		) // decorate
 	}
 
