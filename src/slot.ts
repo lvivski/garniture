@@ -25,6 +25,13 @@ type SlotConfig = {
 	default?: boolean
 }
 
+export function defaultSlot<T extends ObservedElement, K extends HTMLElement[]>(
+	value: ClassAccessorDecoratorTarget<T, K>,
+	context: ClassAccessorDecoratorContext<T, K>,
+): ClassAccessorDecoratorResult<T, K> {
+	return slot<T, K>({ default: true })(value, context)
+}
+
 export function slot<T extends ObservedElement, K extends HTMLElement[]>(
 	config?: SlotConfig,
 ): ClassAccessorDecorator<T, K>
