@@ -115,10 +115,10 @@ export function attr<
 		return result
 	}
 
-	if (arguments.length > 1) {
+	if (maybeContext) {
 		return decorator(
 			configOrValue as ClassAccessorDecoratorTarget<T, K>,
-			maybeContext!,
+			maybeContext,
 		) // decorate
 	}
 

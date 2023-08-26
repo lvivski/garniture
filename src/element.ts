@@ -100,8 +100,8 @@ export function element<
 		return ProxyElement
 	}
 
-	if (typeof configOrCtor === 'function') {
-		return decorator(configOrCtor, maybeContext!) // decorate
+	if (maybeContext) {
+		return decorator(configOrCtor as TCtor, maybeContext) // decorate
 	}
 
 	return decorator as ClassDecorator<TCtor> // enclose

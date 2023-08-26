@@ -65,8 +65,8 @@ export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
 		observedMap.set(metadata, observed)
 	}
 
-	if (arguments.length > 1) {
-		return decorator(propertiesOrValue as K, maybeContext!) // decorate
+	if (maybeContext) {
+		return decorator(propertiesOrValue as K, maybeContext) // decorate
 	}
 
 	return decorator // enclose
