@@ -22,14 +22,14 @@ export function setSlotted<T extends ObservedElement>(
 }
 
 type SlotConfig = {
-	default?: boolean
+	main?: boolean
 }
 
-export function defaultSlot<T extends ObservedElement, K extends HTMLElement[]>(
+export function main<T extends ObservedElement, K extends HTMLElement[]>(
 	value: ClassAccessorDecoratorTarget<T, K>,
 	context: ClassAccessorDecoratorContext<T, K>,
 ): ClassAccessorDecoratorResult<T, K> {
-	return slot<T, K>({ default: true })(value, context)
+	return slot<T, K>({ main: true })(value, context)
 }
 
 export function slot<T extends ObservedElement, K extends HTMLElement[]>(
@@ -56,7 +56,7 @@ export function slot<T extends ObservedElement, K extends HTMLElement[]>(
 		if (configOrValue !== value) {
 			// enclosed
 			config = configOrValue as SlotConfig
-			if (config.default) {
+			if (config.main) {
 				slotName = ''
 			}
 		}

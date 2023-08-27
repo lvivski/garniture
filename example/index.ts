@@ -7,6 +7,7 @@ import {
 	html,
 	css,
 	slot,
+	main,
 } from '../src/index.js'
 
 const reset = css`
@@ -89,9 +90,7 @@ class RedText extends HTMLElement {}
 class SlotCounter extends HTMLElement {
 	@slot
 	accessor dataLog: HTMLElement[] = []
-	@slot({
-		default: true,
-	})
+	@main
 	accessor main: HTMLElement[] = []
 
 	connectedCallback() {
