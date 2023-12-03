@@ -1,76 +1,72 @@
-import { getAttrName } from './attr.js'
+import { getAttrName, getAttributes } from './attr.js'
 import { toHyphenCase } from './helpers.js'
 import {
-	Constructor, ObservablePropertiesList, MethodDecorator, ObservedElement, UpdateFunction
+	ObservablePropertiesList,
+	ObservedElement,
+	UpdateFunction,
+	AnyMethod,
+	ClassMethodDecorator,
 } from './types.js'
 
-const observed = Symbol()
+const observedMap = new WeakMap<
+	DecoratorMetadata,
+	Record<string, Set<UpdateFunction>>
+>()
 
-declare module './types.js' {
-	interface ObservedElement {
-		[observed]?: {
-			[key: string]: Set<UpdateFunction>
-		}
-	}
+export function getObserved(metadata: DecoratorMetadata) {
+	return observedMap.get(metadata) ?? {}
+}
+
+export function hasObserved(metadata: DecoratorMetadata) {
+	return observedMap.has(metadata)
 }
 
 export function observe<T>(
-	properties?: T extends ObservedElement ? ObservablePropertiesList<T> : Array<keyof T>,
-): MethodDecorator<T, UpdateFunction>
-export function observe<T extends ObservedElement>(
-	proto: T,
-	key: string,
-	descriptor: TypedPropertyDescriptor<UpdateFunction>,
+	properties?: T extends ObservedElement
+		? ObservablePropertiesList<T>
+		: (keyof T)[],
+): ClassMethodDecorator<T>
+export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
+	value: K,
+	context: ClassMethodDecoratorContext<T, K>,
 ): void
-export function observe<T extends ObservedElement>(
-	propertiesOrProto?: ObservablePropertiesList<T> | T,
-	maybeKey?: string,
-	maybeDescriptor?: TypedPropertyDescriptor<UpdateFunction>,
-): MethodDecorator<T, UpdateFunction> | void {
-	function decorator(proto: T, key: string, descriptor: TypedPropertyDescriptor<UpdateFunction>): void {
+export function observe<T extends ObservedElement, K extends AnyMethod<T>>(
+	propertiesOrValue?: ObservablePropertiesList<T> | K,
+	maybeContext?: ClassMethodDecoratorContext<T, K>,
+): ClassMethodDecorator<T, K> | void {
+	function decorator(
+		value: K,
+		{ kind, metadata }: ClassMethodDecoratorContext<T, K>,
+	): void {
+		if (kind !== 'method') return
+
 		let observedAttributes: string[]
 
-		const { constructor } = proto
-
-		if (propertiesOrProto !== proto) { // enclosed
-			const properties = propertiesOrProto as ObservablePropertiesList<T>
-			observedAttributes = properties && properties.length
-				? properties.map((attribute) => getAttrName(proto, attribute as string) || toHyphenCase(attribute as string))
-				: (constructor as Constructor<T>).observedAttributes || []
-		} else { // decorated
-			observedAttributes = (constructor as Constructor<T>).observedAttributes || []
+		if (propertiesOrValue !== value) {
+			// enclosed
+			const properties = propertiesOrValue as ObservablePropertiesList<T>
+			observedAttributes = properties?.length
+				? properties.map(
+						(attribute) =>
+							getAttrName(metadata, attribute as string) ??
+							toHyphenCase(attribute as string),
+				  )
+				: getAttributes(metadata) || []
+		} else {
+			// decorated
+			observedAttributes = getAttributes(metadata) || []
 		}
 
-		if (!proto[observed]) {
-			proto[observed] = {}
-			const attributeChangedCallback = proto.attributeChangedCallback
-			proto.attributeChangedCallback = function (
-				attributeName: string,
-				oldValue: string | null,
-				newValue: string | null,
-			): void {
-				if (attributeChangedCallback) {
-					attributeChangedCallback.call(this, attributeName, oldValue, newValue)
-				}
-				if (oldValue === newValue) return
-
-				const updaters = this[observed]?.[attributeName]
-				if (updaters) {
-					for (const updater of updaters) {
-						updater.call(this)
-					}
-				}
-			}
-		}
-
+		const observed = observedMap.get(metadata) ?? {}
 		for (const attribute of observedAttributes) {
-			proto[observed][attribute] ||= new Set()
-			proto[observed][attribute].add(descriptor.value as UpdateFunction)
+			observed[attribute] ??= new Set()
+			observed[attribute].add(value as UpdateFunction)
 		}
+		observedMap.set(metadata, observed)
 	}
 
-	if (arguments.length > 1) {
-		return decorator(propertiesOrProto as T, maybeKey as string, maybeDescriptor as TypedPropertyDescriptor<UpdateFunction>) // decorate
+	if (maybeContext) {
+		return decorator(propertiesOrValue as K, maybeContext) // decorate
 	}
 
 	return decorator // enclose

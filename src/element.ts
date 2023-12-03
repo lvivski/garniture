@@ -1,45 +1,46 @@
-import { decorate, decorateInstance } from './decorate.js'
 import { toHyphenCase } from './helpers.js'
-import { slotted } from './slot.js'
+import { setSlotted } from './slot.js'
 import { defaultTemplate } from './template.js'
 import {
-	Constructor, ClassDecorator, ObservedElement, DecorationConfig, DecorationOptions, ExpectedMembers
+	ObservedConstructor,
+	ClassDecorator,
+	ObservedElement,
 } from './types.js'
+import { getAttributes } from './attr.js'
+import { getObserved, hasObserved } from './observe.js'
 
-type ElementConfig<TConfig extends ElementConfig<TConfig>> = {
+type ElementConfig = {
 	name?: string
 	template?: HTMLTemplateElement
 	style?: CSSStyleSheet[]
-	decorate?: DecorationConfig<TConfig['decorate']>
 }
 
-type WithDecorated<TConfig extends ElementConfig<TConfig>, U>
-	= Constructor<U & ExpectedMembers<TConfig['decorate'], U>>
-
 export function element<
-	TConfig extends ElementConfig<TConfig>,
+	TConfig extends ElementConfig,
 	TElement extends ObservedElement,
-	TCtor extends WithDecorated<TConfig, TElement>
->(
-	config?: string | TConfig
-): ClassDecorator<TCtor>
+	TCtor extends ObservedConstructor<TElement>,
+>(config?: string | TConfig): ClassDecorator<TCtor>
 export function element<
-	TConfig extends ElementConfig<TConfig>,
 	TElement extends ObservedElement,
-	TCtor extends WithDecorated<TConfig, TElement>
->(
-	constructor: TCtor
-): TCtor
+	TCtor extends ObservedConstructor<TElement>,
+>(constructor: TCtor, context: ClassDecoratorContext<TCtor>): TCtor
 export function element<
-	TConfig extends ElementConfig<TConfig>,
+	TConfig extends ElementConfig,
 	TElement extends ObservedElement,
-	TCtor extends WithDecorated<TConfig, TElement>
+	TCtor extends ObservedConstructor<TElement>,
 >(
-	configOrCtor?: string | TConfig | TCtor
+	configOrCtor?: string | TConfig | TCtor,
+	maybeContext?: ClassDecoratorContext<TCtor>,
 ): ClassDecorator<TCtor> | TCtor {
-	function decorator(constructor: TCtor): TCtor {
-		let tagName = toHyphenCase(constructor.name)
-		if (configOrCtor !== constructor) { // enclosed
+	function decorator(
+		Ctor: TCtor,
+		{ kind, name, metadata }: ClassDecoratorContext<TCtor>,
+	): TCtor {
+		if (kind !== 'class') return Ctor
+
+		let tagName = toHyphenCase(String(name))
+		if (configOrCtor !== Ctor) {
+			// enclosed
 			if (typeof configOrCtor === 'string') {
 				tagName = configOrCtor
 			} else if (configOrCtor?.name) {
@@ -47,42 +48,73 @@ export function element<
 			}
 		}
 
-		const config = configOrCtor as TConfig
-		if (config.decorate) {
-			decorate<ObservedElement>(constructor, config.decorate)
+		if (hasObserved(metadata)) {
+			const proto = Ctor.prototype as ObservedElement
+			const attributeChangedCallback = proto.attributeChangedCallback
+			proto.attributeChangedCallback = function (
+				attributeName: string,
+				oldValue: string | null,
+				newValue: string | null,
+				namespace?: string,
+			): void {
+				attributeChangedCallback?.call(
+					this,
+					attributeName,
+					oldValue,
+					newValue,
+					namespace,
+				)
+				if (oldValue === newValue) return
+				const updaters = getObserved(metadata)[attributeName]
+				if (updaters) {
+					for (const updater of updaters) {
+						updater.call(this)
+					}
+				}
+			}
+
+			const attrs = getAttributes(metadata).concat(
+				Ctor.observedAttributes ?? [],
+			)
+
+			Reflect.defineProperty(Ctor, 'observedAttributes', {
+				configurable: true,
+				enumerable: true,
+				value: attrs,
+			})
 		}
 
-		const ProxyElement = new Proxy(constructor, {
+		const ProxyElement = new Proxy(Ctor, {
 			construct(target, args, newTarget) {
-				const element: TElement = Reflect.construct(target, args, newTarget)
+				const element = Reflect.construct(target, args, newTarget) as TElement
 
-				if (!(element instanceof CustomElement) && typeof configOrCtor === 'object') {
+				if (typeof configOrCtor === 'object') {
 					customElement<TElement, TConfig>(element, configOrCtor)
 				}
 
 				return element
-			}
+			},
 		})
 
 		customElements.define(tagName, ProxyElement)
-		return ProxyElement as TCtor
+		return ProxyElement
 	}
 
-	if (typeof configOrCtor === 'function') {
-		return decorator(configOrCtor as TCtor) // decorate
+	if (maybeContext) {
+		return decorator(configOrCtor as TCtor, maybeContext) // decorate
 	}
 
-	return decorator as unknown as ClassDecorator<TCtor> // enclose
+	return decorator as ClassDecorator<TCtor> // enclose
 }
 
 function customElement<
 	TElement extends ObservedElement,
-	TConfig extends ElementConfig<TConfig>
+	TConfig extends ElementConfig,
 >(element: TElement, options: TConfig) {
 	if (options.template || options.style) {
 		const shadowRoot = element.attachShadow({ mode: 'open' })
 
-		const template = options.template || defaultTemplate
+		const template = options.template ?? defaultTemplate
 		shadowRoot.append(template.content.cloneNode(true))
 
 		if (options.style) {
@@ -91,25 +123,9 @@ function customElement<
 	}
 
 	if (element.shadowRoot) {
-		element.shadowRoot.addEventListener('slotchange', event => {
+		element.shadowRoot.addEventListener('slotchange', (event) => {
 			const slot = event.target as HTMLSlotElement
-
-			element[slotted] ||= {}
-			element[slotted][slot.name] = slot.assignedElements() as HTMLElement[]
+			setSlotted(element, slot.name, slot.assignedElements() as HTMLElement[])
 		})
 	}
-
-	if (options.decorate) {
-		// Needed for decorating instance fields
-		decorateInstance(element, options.decorate as unknown as DecorationOptions<TElement>)
-	}
 }
-
-export class CustomElement extends HTMLElement {
-	constructor() {
-		super()
-		const ctor = this.constructor
-		customElement(this, ctor)
-	}
-}
-

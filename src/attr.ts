@@ -1,114 +1,126 @@
 import { toHyphenCase } from './helpers.js'
-import { Constructor, ObservedElement, PropertyDecorator } from './types.js'
+import { ClassAccessorDecorator, ObservedElement } from './types.js'
 
-const attributes = Symbol()
-
-declare module './types.js' {
-	interface ObservedElement {
-		[attributes]?: {
-			[key: string]: string
-		}
-	}
-}
+const attributesMap = new WeakMap<DecoratorMetadata, Record<string, string>>()
 
 type AttrConfig = {
 	data?: boolean
 	bool?: boolean
 }
 
-function addToObserved<T extends ObservedElement>(proto: T, key: string, attr: string) {
-	proto[attributes] ||= {}
-	proto[attributes][key] = attr
-
-	const { constructor } = proto
-	let attrs = [attr]
-
-	if ('observedAttributes' in constructor) {
-		const observed = (constructor as Constructor<T>).observedAttributes!
-		if (observed.includes(attr)) return
-		attrs = observed.concat(observed)
-	}
-
-	Reflect.defineProperty(constructor, 'observedAttributes', {
-		configurable: true,
-		enumerable: true,
-		value: attrs,
-	})
+function addToAttributes(
+	metadata: DecoratorMetadata,
+	key: string,
+	attr: string,
+) {
+	const attributes = attributesMap.get(metadata) ?? {}
+	attributes[key] = attr
+	attributesMap.set(metadata, attributes)
 }
 
-export function getAttrName<T extends ObservedElement>(proto: T, attr: string): string | undefined {
-	return proto[attributes]?.[attr]
+export function getAttributes(metadata: DecoratorMetadata) {
+	return Object.values(attributesMap.get(metadata) ?? {})
 }
 
-export function bool<K extends string>(proto: Record<K, boolean>, key: K): void {
-	return attr({ bool: true })(proto, key)
+export function getAttrName(
+	metadata: DecoratorMetadata,
+	attr: string,
+): string | undefined {
+	return attributesMap.get(metadata)?.[attr]
 }
 
-export function data<K extends string>(proto: Record<K, string>, key: K): void {
-	return attr({ data: true })(proto, key)
+export function bool<T extends ObservedElement, K extends boolean>(
+	value: ClassAccessorDecoratorTarget<T, K>,
+	context: ClassAccessorDecoratorContext,
+) {
+	return attr<T, K>({ bool: true })(value, context)
 }
 
-export function attr<T>(
-	config?: AttrConfig
-): PropertyDecorator<T, string | boolean>
-export function attr<K extends string>(
-	proto: Record<K, boolean | string>,
-	key: K
-): void
-export function attr<T extends ObservedElement, K extends string>(
-	configOrProto?: AttrConfig | T,
-	maybeKey?: K,
-): PropertyDecorator<T, string | boolean> | void {
-	function decorator(proto: T, key: string): void {
+export function data<T extends ObservedElement, K extends string>(
+	value: ClassAccessorDecoratorTarget<T, K>,
+	context: ClassAccessorDecoratorContext,
+) {
+	return attr<T, K>({ data: true })(value, context)
+}
+
+export function attr<T extends ObservedElement, K extends string | boolean>(
+	config?: AttrConfig,
+): ClassAccessorDecorator<T, K>
+export function attr<T extends ObservedElement, K extends string | boolean>(
+	value: ClassAccessorDecoratorTarget<T, K>,
+	context: ClassAccessorDecoratorContext<T, K>,
+): ClassAccessorDecoratorResult<T, K>
+export function attr<
+	T extends ObservedElement,
+	K extends string | null | boolean,
+>(
+	configOrValue?: AttrConfig | ClassAccessorDecoratorTarget<T, K>,
+	maybeContext?: ClassAccessorDecoratorContext<T, K>,
+): ClassAccessorDecorator<T, K> | ClassAccessorDecoratorResult<T, K> {
+	function decorator(
+		value: ClassAccessorDecoratorTarget<T, K>,
+		{ kind, name, metadata }: ClassAccessorDecoratorContext<T, K>,
+	) {
+		if (kind !== 'accessor') return value
+
+		const key = String(name)
 		let attrName = toHyphenCase(key)
-		let descriptor
-		if (configOrProto !== proto) { // enclosed
-			const config = configOrProto as AttrConfig
+
+		let result: ClassAccessorDecoratorResult<T, K> = {
+			get(this: T): K {
+				return this.getAttribute(attrName) as K
+			},
+			set(this: T, value: K): K {
+				this.setAttribute(attrName, (value as string) ?? '')
+				return value
+			},
+			init(this: T, initialValue: K) {
+				this.setAttribute(attrName, (initialValue as string) ?? '')
+				return initialValue
+			},
+		}
+
+		if (configOrValue !== value) {
+			// enclosed
+			const config = configOrValue as AttrConfig
 			if (config.data) {
 				attrName = `data-${attrName}`
 			}
 
 			if (config.bool) {
-				descriptor = {
-					configurable: true,
-					enumerable: true,
-					get(this: T): boolean {
-						return this.hasAttribute(attrName)
+				result = {
+					get(this: T): K {
+						return this.hasAttribute(attrName) as K
 					},
-					set(this: T, value: boolean): boolean {
+					set(this: T, value: K): K {
 						if (value) {
 							this.setAttribute(attrName, '')
 						} else {
 							this.removeAttribute(attrName)
 						}
 						return value
-					}
+					},
+					init(this: T, initialValue: K) {
+						if (initialValue) {
+							this.setAttribute(attrName, '')
+						}
+						return initialValue
+					},
 				}
 			}
 		}
 
-		if (!descriptor) {
-			descriptor = {
-				configurable: true,
-				enumerable: true,
-				get(this: T): string | null {
-					return this.getAttribute(attrName)
-				},
-				set(this: T, value: string): string {
-					this.setAttribute(attrName, value)
-					return value
-				}
-			}
-		}
+		addToAttributes(metadata, key, attrName)
 
-		Reflect.defineProperty(proto, key, descriptor)
-
-		addToObserved(proto, key, attrName)
+		return result
 	}
 
-	if (arguments.length > 1) {
-		return decorator(configOrProto as T, maybeKey as string) // decorate
+	if (maybeContext) {
+		return decorator(
+			configOrValue as ClassAccessorDecoratorTarget<T, K>,
+			maybeContext,
+		) // decorate
 	}
 
-	return decorator // enclose
+	return decorator as ClassAccessorDecorator<T, K> // enclose
 }

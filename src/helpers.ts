@@ -59,18 +59,23 @@ function ConstructableStyleSheet(this: ConstructableStyleSheet) {
 	}
 }
 
-ConstructableStyleSheet.prototype = Object.create(CSSStyleSheet)
+ConstructableStyleSheet.prototype = Object.create(
+	CSSStyleSheet,
+) as CSSStyleSheet
 
-Reflect.defineProperty(ConstructableStyleSheet.prototype, 'cssRules', {
+Object.defineProperty(ConstructableStyleSheet.prototype, 'cssRules', {
 	configurable: true,
 	enumerable: true,
 	get(this: ConstructableStyleSheet) {
 		return this[styles]?.main.sheet?.cssRules
-	}
+	},
 })
 
 // TODO implement insertRule and deleteRule
-ConstructableStyleSheet.prototype.replace = function (contents: string): Promise<ConstructableStyleSheet> {
+ConstructableStyleSheet.prototype.replace = function (
+	this: ConstructableStyleSheet,
+	contents: string,
+): Promise<ConstructableStyleSheet> {
 	try {
 		this.replaceSync(contents)
 		return Promise.resolve(this)
@@ -79,29 +84,31 @@ ConstructableStyleSheet.prototype.replace = function (contents: string): Promise
 	}
 }
 
-ConstructableStyleSheet.prototype.replaceSync = function (contents: string) {
+ConstructableStyleSheet.prototype.replaceSync = function (
+	this: ConstructableStyleSheet,
+	contents: string,
+) {
 	const style = this[styles]
 	const css = contents.replace(/@import.+?;?$/gm, '')
 
 	style.main.textContent = css
-	for (let i = 0; i < style.adopted.length; i++) {
-		const adopted = style.adopted[i]
+	for (const adopted of style.adopted) {
 		adopted.textContent = css
 	}
 }
 
 if (!supportsConstructableStyleSheets) {
-	Reflect.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', {
+	Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', {
 		configurable: true,
 		enumerable: true,
 		get(this: ShadowRoot): ConstructableStyleSheet[] {
-			return this[adopted] || []
+			return this[adopted] ?? []
 		},
 		set(this: ShadowRoot, values: ConstructableStyleSheet[] = []) {
 			if (!Array.isArray(values)) {
 				throw new TypeError('Value must be an Array')
 			}
-			const previous = (this[adopted] || []).slice() as ConstructableStyleSheet[]
+			const previous = (this[adopted] ?? []).slice()
 			const existing: boolean[] = []
 
 			this[adopted] = values
@@ -132,9 +139,12 @@ if (!supportsConstructableStyleSheets) {
 					}
 				}
 			}
-		}
+		},
 	})
 
 	// @ts-expect-error: replaces default implementation
 	window.CSSStyleSheet = ConstructableStyleSheet as CSSStyleSheet
 }
+
+// @ts-expect-error: replaces default implementation
+Symbol.metadata ??= Symbol('metadata')

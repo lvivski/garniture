@@ -1,14 +1,25 @@
 {
 	"root": true,
 	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"project": true
+	},
 	"plugins": ["@typescript-eslint"],
 	"extends": [
 		"eslint:recommended",
-		"plugin:@typescript-eslint/recommended"
+		"plugin:@typescript-eslint/recommended-type-checked",
+    "plugin:@typescript-eslint/stylistic-type-checked"
 	],
 	"ignorePatterns": ["lib/*", "example/*"],
 	"rules": {
 		"quotes": ["error", "single"],
-		"indent": ["error", "tab"]
+		"indent": ["warn", "tab"],
+		"no-mixed-spaces-and-tabs": "warn",
+		"@typescript-eslint/consistent-type-definitions": "warn",
+		"@typescript-eslint/unbound-method": "warn",
+		"@typescript-eslint/prefer-nullish-coalescing": ["error", {
+			"ignoreTernaryTests": true,
+			"ignoreConditionalTests": true
+		}]
 	}
 }

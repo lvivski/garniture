@@ -1,56 +1,79 @@
 import { toHyphenCase } from './helpers.js'
-import { ObservedElement, PropertyDecorator } from './types.js'
+import { ClassAccessorDecorator, ObservedElement } from './types.js'
 
-export const slotted = Symbol()
+const slottedMap = new WeakMap<ObservedElement, Record<string, HTMLElement[]>>()
 
-declare module './types.js' {
-	interface ObservedElement {
-		[slotted]?: {
-			[key: string]: HTMLElement[]
-		}
-	}
+function getSlotted<T extends ObservedElement>(
+	element: T,
+	slotName = '',
+): HTMLElement[] {
+	const slotted = slottedMap.get(element)
+	return slotted?.[slotName] ?? []
+}
+
+export function setSlotted<T extends ObservedElement>(
+	element: T,
+	slotName: string,
+	values: HTMLElement[],
+): void {
+	const slotted = slottedMap.get(element) ?? {}
+	slotted[slotName] = values
+	slottedMap.set(element, slotted)
 }
 
 type SlotConfig = {
-	default: boolean
+	main?: boolean
 }
 
-export function slot<T>(
-	config?: SlotConfig
-): PropertyDecorator<T, HTMLElement[]>
-export function slot<K extends string>(
-	proto: Record<K, HTMLElement[]>,
-	key: K
-): void
-export function slot<T extends ObservedElement, K extends string>(
-	configOrProto?: SlotConfig | T,
-	maybeKey?: K,
-): PropertyDecorator<T, HTMLElement[]> | void {
-	function decorator(proto: T, key: string): void {
+export function main<T extends ObservedElement, K extends HTMLElement[]>(
+	value: ClassAccessorDecoratorTarget<T, K>,
+	context: ClassAccessorDecoratorContext<T, K>,
+): ClassAccessorDecoratorResult<T, K> {
+	return slot<T, K>({ main: true })(value, context)
+}
+
+export function slot<T extends ObservedElement, K extends HTMLElement[]>(
+	config?: SlotConfig,
+): ClassAccessorDecorator<T, K>
+export function slot<T extends ObservedElement, K extends HTMLElement[]>(
+	value: ClassAccessorDecoratorTarget<T, K>,
+	context: ClassAccessorDecoratorContext<T, K>,
+): ClassAccessorDecoratorResult<T, K>
+export function slot<T extends ObservedElement, K extends HTMLElement[]>(
+	configOrValue?: SlotConfig | ClassAccessorDecoratorTarget<T, K>,
+	maybeContext?: ClassAccessorDecoratorContext<T, K>,
+): ClassAccessorDecorator<T, K> | ClassAccessorDecoratorResult<T, K> {
+	function decorator(
+		value: ClassAccessorDecoratorTarget<T, K>,
+		{ kind, name }: ClassAccessorDecoratorContext<T, K>,
+	): ClassAccessorDecoratorResult<T, K> {
+		if (kind !== 'accessor') return value
+
+		const key = String(name)
 		let slotName = toHyphenCase(key)
+
 		let config: SlotConfig
-		if (configOrProto !== proto) { // enclosed
-			config = configOrProto as SlotConfig
-			if (config.default) {
+		if (configOrValue !== value) {
+			// enclosed
+			config = configOrValue as SlotConfig
+			if (config.main) {
 				slotName = ''
 			}
 		}
 
-		Reflect.defineProperty(proto, key, {
-			configurable: true,
-			enumerable: true,
-			get(this: T): HTMLElement[] {
-				return this[slotted]?.[slotName] || []
+		return {
+			get(this: T): K {
+				return getSlotted(this, slotName) as K
 			},
 			set(this: T, values: HTMLElement[] = []): void {
 				if (!Array.isArray(values)) {
 					throw new TypeError('Value must be an Array')
 				}
-				const previous = (this[slotted]?.[slotName] || []).slice() as HTMLElement[]
+				const previous = getSlotted(this, slotName).slice()
 				const existing: boolean[] = []
 
-				this[slotted] ||= {}
-				this[slotted][slotName] = values
+				setSlotted(this, slotName, values)
+
 				// add new elements
 				for (const value of values) {
 					if (slotName) {
@@ -72,13 +95,16 @@ export function slot<T extends ObservedElement, K extends string>(
 						value.remove()
 					}
 				}
-			}
-		})
+			},
+		}
 	}
 
-	if (arguments.length > 1) {
-		return decorator(configOrProto as T, maybeKey as string) // decorate
+	if (maybeContext) {
+		return decorator(
+			configOrValue as ClassAccessorDecoratorTarget<T, K>,
+			maybeContext,
+		) // decorate
 	}
 
-	return decorator // enclose
+	return decorator as ClassAccessorDecorator<T, K> // enclose
 }
