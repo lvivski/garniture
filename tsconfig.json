@@ -9,7 +9,7 @@
 		"sourceMap": true,
 		"strict": true,
 		"target": "es2022",
-		"rootDir": "./src"
+		"rootDir": "src"
 	},
 	"include": ["src"],
 	"exclude": ["node_modules"]

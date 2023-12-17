@@ -48,6 +48,10 @@ export function element<
 			}
 		}
 
+		if (!tagName.includes('-')) {
+			throw new Error(`Custom element name must contain a hyphen: ${tagName}`)
+		}
+
 		if (hasObserved(metadata)) {
 			const proto = Ctor.prototype as ObservedElement
 			const attributeChangedCallback = proto.attributeChangedCallback
