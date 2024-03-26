@@ -9,15 +9,7 @@ export function html(
 	strings: TemplateStringsArray,
 	...values: TemplateStringValue[]
 ) {
-	let html = ''
-
-	for (let i = 0; i < strings.length; i++) {
-		html += strings[i]
-		const inRange = i < values.length - 1
-		if (inRange) {
-			html += values[i]
-		}
-	}
+	const html = String.raw(strings, ...values)
 
 	const template = document.createElement('template')
 	template.innerHTML = htmlPolicy.createHTML(html)
