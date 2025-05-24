@@ -8,6 +8,7 @@ import {
 	css,
 	slot,
 	main,
+	bind,
 } from '../src/index.js'
 
 const reset = css`
@@ -101,6 +102,21 @@ class SlotCounter extends HTMLElement {
 			const span2 = span.cloneNode(true) as HTMLSpanElement
 			this.dataLog = [span]
 			this.main = [span2]
-		}, 1000)
+		}, 5000)
+	}
+
+	@bind('span', 'click')
+	handleClick(event: Event) {
+		const target = event.target as HTMLSpanElement
+		console.log('Clicked:', target?.textContent)
+		if (target) {
+			// toggle color and log text content
+			if (target.style.color === 'blue') {
+				target.style.color = 'red'
+			} else {
+				target.style.color = 'blue'
+			}
+			console.log('Clicked:', target.textContent)
+		}
 	}
 }
