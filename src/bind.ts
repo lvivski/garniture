@@ -46,7 +46,7 @@ export function bind<T extends ObservedElement, K extends HTMLElement[] | null>(
 					delegatedListeners.get(this) ?? new Map<string, EventListener>()
 				delegatedListeners.set(this, listeners)
 
-				const key = `${selector}:${event}`
+				const key = `${selector}:${event}:${method.name}`
 
 				if (listeners.has(key)) {
 					return
