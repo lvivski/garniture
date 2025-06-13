@@ -68,10 +68,10 @@ Manages slotted content.
 
 ### Template Functions
 
-#### `html\`...\``
+#### ``html`...` ``
 Creates HTML templates with trusted types support.
 
-#### `css\`...\``
+#### ``css`...` ``
 Creates constructable stylesheets.
 
 ## Examples
