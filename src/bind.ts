@@ -54,7 +54,7 @@ export function bind<T extends ObservedElement, K extends HTMLElement[] | null>(
 
 				const handler = function (this: T, e: Event) {
 					const target = e.target as Element
-					if (target && target.matches(selector)) {
+					if (target?.matches(selector)) {
 						method.call(this, e)
 					}
 				}

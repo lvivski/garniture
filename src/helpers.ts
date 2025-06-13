@@ -80,7 +80,7 @@ ConstructableStyleSheet.prototype.replace = function (
 		this.replaceSync(contents)
 		return Promise.resolve(this)
 	} catch (e) {
-		return Promise.reject(e)
+		return Promise.reject(e as Error)
 	}
 }
 
